@@ -1,0 +1,105 @@
+;
+; This code converts the sting of binary digits to
+; ascii characters and prints them on the console.
+;
+; other options are convert and store in a buffer.
+;
+;   opt is:
+;  p = print
+;  s = store
+;
+;   out is:
+;  0 does nothing
+;  address for storage
+; 
+;  If these paramaters are supplied then, buf is the pointer to
+; the stream of binary digits to convert, and count is the number
+; of digits to convert for output.  These are optional, if left
+; blank then, hl is pointer to input stream and de is the count of
+; digits to convert.
+;  
+;   buf is:
+;  output buffer
+;
+;   count is:
+;  number of digits to convert 
+;
+; hl is pointer to end of binary string of digits
+; de is number of digits
+	macro	binasci
+%lab	binasci	%opt,%out,%buf,%count
+	gblb	%bina
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%buf' eq '')&noreg
+	lxi	h,%count
+	shld	binacnt	; number of digits to convert
+	xchg
+	lxi	h,%buf
+	shld	binainp ; input buffer stream
+&noreg	anop
+	aif	('%opt' eq 'p')&print
+	aif	('%opt' eq 's')&store
+	aif	('%opt' eq '')&print
+&store	anop
+	mvi	a,1
+	sta	binaflg
+	aif	('%out' ne '')&goodr
+	mnote	"store option requires an output buffer"
+	mexit
+&goodr	anop
+	shld	binainp
+	lxi	h,%out
+	shld	binapnt
+	lhld	binainp		; get the input pointer
+	lxi	d,%count	; restore the count 
+	ago	&fin
+&print	anop
+	mvi	a,0
+	sta	binaflg
+&fin	anop
+	call	bas
+	aif	(%bina)&done
+%bina	setb	1
+	jmp	x$sysin
+bas	mov	a,m
+	cpi	10
+	jnc	m$sysin
+	adi	'0'
+n$sysin	push	h
+	push	d
+	push	b
+	push	psw
+; check the print flag here
+	lda	binaflg
+	cpi	1
+	jz	o$sysin
+	pop	psw
+	mvi	c,conso
+	mov	e,a
+	call	bdos
+l$sysin	pop	b
+	pop	d
+	pop	h
+	dcx	h
+	dcx	d
+	mov	a,e
+	cpi	0
+	jnz	bas
+	ret
+o$sysin	lhld	binapnt
+	pop	psw
+	mov	m,a
+	inx	h
+	shld	binapnt
+	jmp	l$sysin
+m$sysin	adi	'A'-10
+	jmp	n$sysin
+binaflg	db	0	; print/store flag
+binapnt	dw	0	; out put buffer pointer
+binainp	dw	0	; input buffer pointer
+binacnt	dw	0	; input count
+x$sysin	equ	$
+&done	anop
+	mend

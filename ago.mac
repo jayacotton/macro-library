@@ -1,0 +1,9 @@
+; test ago command
+	macro	tago
+%lab	tago
+	ago	&fred
+	mnote	'missed to target'
+	mexit
+&fred	anop
+	mnote	'found the target'
+	mend

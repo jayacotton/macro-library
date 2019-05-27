@@ -1,0 +1,205 @@
+	macro	ds1307
+	ds1307	%name
+	gblb	%clock
+	aif	(%clock)&done
+%clock	setb	1
+;
+; ds1307 driver macro.
+;
+;  you will need i2c macro for this to work.
+;
+; The part has 2 sections.  
+;
+;  Sec. 1 is the clock.
+; address  bit 7 bit 6 bit 5 bit 4 bit 3 bit 2 bit 1 bit 0 function
+;  00h   |   ch | 10 seconds      |   seconds             | seconds
+;  01h   |      | 10 minutes      |   minutes             | minutes
+;  02h   |      | 12/ | 10 h| 10h |    hrs                | hours
+;               |24   |a/pm |     |                       |
+;  03h   |                              | day             | day
+; 04h    |            | 10 date   |   date                | date
+;  05h   |                   |10 m| month	          | month
+;  06h   |  10 year               |  year                 | year
+; 8h-3fh |              ram        56x8                   | ram  
+;
+;  Sec. 2 is a small ram area.
+;
+;  It can generate interrupts.  Not connected at this time.
+;
+ctl	equ	7	; ds1307 control reg addr
+clk_addr equ	011010000b	; address of ds1307
+clk_wm	equ	clk_addr	; write mode
+clk_rm	equ	clk_addr + 1	; read mod
+	aif	('%name' neq '')&goodnm
+	mnote	"you need to name the driver"
+	mexit
+&goodnm	anop
+;
+; the driver will read raw data and put it in the
+; appropreate locations
+;
+%name	equ	$
+	push	h
+	push	b
+; read time data from rtc
+	di
+	call	i2c_start	; start
+	mvi	c,clk_wm
+	call	i2c_send	; mode write
+	mvi	c,0		; start addres of clock data
+	call	i2c_send
+	call	i2c_stop	; stop 
+	call	i2c_start	; start
+	mvi	c,clk_rm	; mode read
+	call	i2c_send
+	call	i2c_recv	; read seconds
+	mov	a,c
+	sta	secs		; save raw data
+	call	i2c_recv	; read minutes
+	mov	a,c
+	sta	min
+	call	i2c_recv	; read hrs
+	mov	a,c
+	sta	hrs	
+	call	i2c_recv	 
+	mov	a,c
+	sta	date
+	call	i2c_recv
+	mov	a,c
+	sta	mon
+	call	i2c_recv
+	mov	a,c
+	sta	day
+	call	i2c_recv	
+	mov	a,c
+	sta	year
+	call	i2c_stop	; stop 
+; format data 
+	lda	secs
+	lxi	h,ts+6
+	call	cvrt	
+	lda	min
+	lxi	h,ts+3
+	call	cvrt
+	lda	hrs
+	lxi	h,ts
+	call	cvrt
+	lda	date
+	lxi	h,ds+6
+	call	cvrt
+	lda	mon
+	lxi	h,ds+3
+	call	cvrt
+	lxi	h,ds
+	lda	year
+	call	cvrt
+	call	reset_on
+	ei
+	pop	b
+	pop	h
+	ret
+reset_off equ	$
+	mvi	a,mask_data+mask_rd+mask_rst
+	call	i2c_out
+	call	i2c_delay
+	call	i2c_delay
+	ret
+reset_on equ	$
+	mvi	a,mask_data+mask_rd
+	call	i2c_out
+	call	i2c_delay
+	call	i2c_delay
+	ret
+;
+; convert bits to ascii character
+;
+cvrt	mov	c,a	; start with top 4 bits
+	rrc
+	rrc
+	rrc
+	rrc
+	ani	3	; bug here.  years can go to 99
+	adi	30h
+	mov	m,a	; now bottom 4 bits
+	inx	h
+	mov	a,c
+	ani	0fh
+	adi	30h
+	mov	m,a	; and save it
+	ret
+;
+; init the clock.   use generic public name
+; 
+initclk	equ	$
+	call	i2c_init	; init
+	call	i2c_start	; start
+	mvi	c,clk_wm
+	call	i2c_send	; mode write
+	mvi	c,ctl
+	call	i2c_send	; address control reg
+	mvi	c,0		; disable sqw output.
+	call	i2c_send
+	call	i2c_stop	; stop
+	ret
+;
+; get a date encoded as requested
+; hl = output buffer
+; c = format:  0 = ascii string, 1 = bcd numbers
+;
+gdate	equ	$
+	call	%name
+;
+	mov	a,c
+	lxi	d,ds
+	cpi	0
+	jz	d$sysin
+	lxi	d,dd
+d$sysin	mvi	c,8
+e$sysin	ldax	d
+	mov	m,a
+	inx	h
+	inx	d
+	dcr	c
+	jnz	e$sysin
+	ret
+;
+; get time encoded as requested
+; hl = output buffer
+; c = format: 0= ascii string, 1 = bcd digitss
+;
+gtime	equ	$
+	call	%name
+	mov	a,c
+	lxi	d,ts
+	cpi	0
+	jz	d$sysin
+	lxi	d,td
+	jmp	d$sysin
+;
+; read the ram
+;  hl = address to place the ram data in.
+;
+gram	equ	$
+	ret
+;
+; put data into ram
+; hl = address of data to write.
+;
+pram	equ	$
+	ret
+;
+; public data for the clock
+;  
+ts	db	'23:59:59',0
+ds	db	'12/31/18',0
+td	db	2,3,5,9,5,9,0,0,0
+dd	db	1,2,3,1,5,9,0,0,0
+secs	ds	1
+min	ds	1
+hrs	ds	1
+day	ds	1
+date	ds	1
+mon	ds	1
+year	ds	1
+&done	anop
+	mend

@@ -1,0 +1,26 @@
+	macro	fcb
+%lab	fcb	
+	gblb	%fcb
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; creating storage
+;
+s$sysin	equ	$
+	ds	1	;  drive letter
+	ds	8	; file name
+	ds	3	; file extension
+	ds	1	; file extent
+	ds	2
+	ds	1	; number of records in present extent
+	ds	16	; cpm disc map
+	ds	1	; next record to read or write
+	ds	3	; random record number (24 bits)
+e$sysin	equ	$
+	aif	(%fcb)&done
+%fcb	setb	1
+fcbsz	equ	e$sysin - s$sysin
+&done	anop
+	mend
+

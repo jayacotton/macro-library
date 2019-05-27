@@ -1,0 +1,24 @@
+	macro	memset
+	memset	%start,%what,%len
+	gblb	%mem
+; hl = address of memory to fill
+; a = byte to store
+; b = number of bytes
+	aif	('%start' eq '')&noreg
+	lxi	h,%start
+	mvi	a,%what
+	mvi	b,%len
+&noreg	anop
+	call	memset
+	aif	(%mem)&done
+%mem	setb	1
+	jmp	s$sysin
+memset	equ	$
+	mov	m,a
+	inx	h
+	dcr	b
+	jnz	memset	
+	ret
+s$sysin	equ	$
+&done	anop
+	mend

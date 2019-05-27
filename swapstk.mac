@@ -1,0 +1,18 @@
+	MACRO	SWAPSTK
+%LAB	SWAPSTK	%OLD=,%NEW=
+	AIF	('%LAB' EQ '')&GEN
+%LAB	EQU	$
+&GEN	ANOP
+	AIF	('%OLD' NEQ '')&STEP1
+	MNOTE	'Missing old stack storage location name'
+	MEXIT
+&STEP1	ANOP
+	AIF	('%NEW' NEQ '')&STEP2
+	MNOTE	'Missing new stack name'
+	MEXIT
+&STEP2	ANOP
+	LXI	H,0	; clear HL pair
+	DAD	SP	; copy stack pointer
+	SHLD	%OLD	; store the stack pointer
+	LXI	SP,%NEW ; get new stack pointer
+	MEND

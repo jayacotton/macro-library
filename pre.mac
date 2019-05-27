@@ -1,0 +1,10 @@
+;
+; common preamble for cpm
+;
+	macro	pre
+	pre
+	lxi	h,0
+	dad	sp
+	shld	oldsp
+	lxi	sp,newsp
+	mend

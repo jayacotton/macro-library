@@ -1,0 +1,128 @@
+	macro	startp
+	startp	%lab,%argv,%argc
+	gblb	%startp
+	aif	(%startp)&done
+%startp	setb	1
+;
+; pickup the start up parameters from cpm 
+; and parse them into a list
+;
+;  there will be %argv and %argc 
+;
+;   %argv = list of pointers to args
+;   %argc = number of pointers in list.
+;   argb = the raw list of text.
+;
+;  at 80h is the number of bytes that will be found in the 
+;  command buffer.
+;  at 82h in cpm is the text following the current command
+;  being executed.
+;  Each word in the buffer is seperated by a NULL character.
+;
+;  arbitrary assumptions.
+;   there will be no more than 16 arguments given.
+;   the total length of the command will be not more than
+;   128 bytes.
+;
+bcount	equ	80h
+cmdbuf	equ	82h
+
+	aif	('%lab' ne '')&goodl
+	mnote	"needs a function name"
+	mexit
+&goodl	anop
+	aif	('%argv' ne '')&goodv
+	mnote	"needs an argvector"
+	mexit
+&goodv	anop
+	aif	('%argc' ne '')&goodc
+	mnote	"needs vector count"
+	mexit
+&goodc	anop
+%lab	equ	$
+;
+;  copy the startup text from cpm to my private buffer.
+;
+	lxi	h,cmdbuf
+	shld	ibuf
+	lxi	h,argb
+	shld	lbuf
+	lda	bcount
+	sta	cnt
+	cpi	0
+	jz	x$sysin
+	xra	a
+	sta	%argc
+;  do{
+;    %argv[%argc] = lbuf
+a$sysin	equ	$
+	lda	%argc
+	lxi	d,0
+	mov	e,a
+	push	d
+	pop	h
+	dad	d	; hl = %argc*2
+	lxi	d,%argv
+	dad	d	; hl = %argv+%argc*2
+; now store the current lbuf pointer in 
+	xchg
+	lhld	lbuf
+	xchg
+	mov	m,e
+	inx	h
+	mov	m,d	
+;    while(*ibuf){
+c$sysin	lhld	ibuf
+	mov	a,m
+	cpi	' '
+	jz	b$sysin	
+;      *lbuf++=*ibuff++;
+	xchg
+	lhld	lbuf
+	mov	m,a
+	inx	h
+	inx	d
+	shld	lbuf
+	xchg
+	shld	ibuf
+;      charcnt--;
+	lda	cnt
+	dcr	a
+	sta	cnt
+	cpi	0
+	jz	x$sysin
+;    }
+	jmp	c$sysin
+;    *lbuf++=*ibuff++;
+b$sysin	mvi	a,0	; convert space to null
+	inx	h
+	shld	ibuf
+	lhld	lbuf
+	mov	m,a	
+	inx	h
+	shld	lbuf
+;    %argc++;
+	lxi	h,%argc
+	inr	m
+;    while(charcnt)}
+;
+; checking for =< 0 
+	lda	cnt
+	cpi	0
+	jnz	a$sysin
+	ani	80h
+	jnz	a$sysin
+;
+	jmp	x$sysin
+;
+; these are ment to be public paramaters
+;
+lbuf	dw	0
+ibuf	dw	0
+cnt	db	0
+%argv	ds	32	; list of pointers to arguments
+%argc	db	0	; number of arguments given.
+argb	ds	128	; this is the copy of the data.
+x$sysin	equ	$
+&done	anop
+	mend 

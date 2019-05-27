@@ -1,0 +1,95 @@
+;
+; most of this code is from Ben Chong
+;
+	macro	s16550
+%lab	s16550	%read,%write
+	gblb	%s16550
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	(%s16550)&done
+%s16550	setb	1
+;------------------------------------------------------------------------------
+; Initialize UART
+uart_base equ	0d0h
+reg0	equ	uart_base+0
+reg1	equ	uart_base+1
+reg2	equ	uart_base+2
+reg3	equ	uart_base+3
+reg4	equ	uart_base+4
+reg5	equ	uart_base+5
+reg6	equ	uart_base+6
+reg7	equ	uart_base+7
+	mvi	L, 04H  	; 115200 with 7.3728MHz;  OSC / (16 * Baudrate)
+;	mvi	L, 48  		; 9600 with 7.3728MHz;  OSC / (16 * Baudrate)
+; Call this routine with a value in L to set the baudrate
+	mvi	A, 80H          ; Line control register, Set DLAB=1
+	OUT	reg3
+	mov	A, L
+	OUT	reg0    	; Divisor latch
+	xra	a	
+	OUT	reg1    	; Divisor latch
+	mvi	A, 03H          ; Line control register, 8N1, DLAB=0
+	OUT	reg3
+	mvi	A, 02H          ; Modem control register
+	OUT	reg4    	; Enable RTS
+	mvi	A, 87H          ; FIFO enable, reset RCVR/XMIT FIFO
+	OUT	reg2
+                ; Don't enable interrupts...
+;	mvi	a, 01h          ; Enable receiver interrupt
+;	out	reg1
+	RET
+
+;------------------------------------------------------------------------------
+; This is the UART-specific call to bring 
+; RTS high to disable transmit from terminal
+; We can use A
+rtsoff	equ	$
+	mvi	a, 00h
+	out	reg4
+	ret
+
+;------------------------------------------------------------------------------
+; This is the UART-specific call to bring RTS low to re-enable transmit
+
+rtson	equ	$
+	mvi	a, 02h
+	out	reg4
+	ret
+
+;------------------------------------------------------------------------------
+; Enable autoflow control
+
+AFE_16C550	equ	$
+	mvi	A, 87H    ; Trigger level, FIFO enable, reset FIFO
+	OUT     reg2
+; Use this to enable autoflow control
+	mvi      A, 22H   ; Modem control register
+	OUT	reg4    ; Enable AFE
+	RET 
+
+;------------------------------------------------------------------------------
+; Check if a character is available
+; Z=1 if buffer is empty
+pollrd	equ	$
+	IN	reg5
+        ani	1
+	RET 
+
+%write	equ	$
+a$sysin	equ	$
+	in	reg5
+	ani	00100000b
+	jz	a$sysin
+	mov	a,e
+	out	reg0
+	ret
+
+%read	equ	$
+	in	reg5
+	ani	00000001b
+	jz	%read
+	in	reg0
+	ret
+&done	anop
+	mend

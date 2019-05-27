@@ -1,0 +1,83 @@
+	macro	packfd
+%lab	packfd	%name
+	gblb	%gen
+	aif	('%name' neq '')&hasname
+	mnote	"must have a file name to pack"
+	mexit
+&hasname anop
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; hl = fcb
+; %name is the file name to pack into the fcb
+;
+	lxi	d,c$sysin
+	call	packfn
+	jmp	x$sysin
+c$sysin	db	%name
+	db	0
+	aif	(%gen)&done
+%gen	setb	1
+;
+; pack file descriptor done here
+;
+packfn	equ	$
+;
+; so we need to deconstruct the file name string and put the
+; parts into the correct places in the file control block.
+; also need to prep the storage with spaces the make clean
+; file names.
+; 
+	push	hl
+	inx	h	; bump past the drive nr.
+	mvi	a,' '
+	mvi	b,8+3+1	; file name and extension
+	call	memset
+	pop	hl
+; 
+; if the file name byte 2 is a ':' then we need to fiddle with the 
+; drive number
+; 
+	mvi	m,0
+	lda	c$sysin + 1
+	cpi	':'
+	jnz	n$sysin
+;
+; mess with drive here
+;	
+	sbi	'a'	; bug here.  there may be upper case
+	inr	a
+	mov	m,a
+	lxi	d,c$sysin + 2
+; 
+;  work on file name here
+;
+n$sysin	equ	$
+	push	hl	; save start of fcb
+	inx	h	; skip drive number
+	mvi	b,9	; upto 8 bytes
+	mvi	c,'.'	; stop at .
+	call	strcpy	; copy
+	pop	hl	; get fcb back
+	lxi	b,9	; up to file extension
+	dad	b	
+	inx	d	; get past the .
+	mvi	b,4	; upto 3 bytes
+	mvi	c,0	; stop at null
+	call	strcpy	; copy
+	xra	a
+	mov	m,a
+	lxi	d,20
+	dad	d
+	mov	m,a
+	inx	h
+	mov	m,a
+	inx	h
+	mov	m,a
+	inx	h
+	mov	m,a
+	ret 
+&done	anop
+x$sysin	equ	$
+	mend

@@ -1,0 +1,34 @@
+	macro	close
+%lab	close	%fcb
+;
+; need fcb to be present or theres an error
+;
+	aif	('%fcb' ne '')&fcbok
+	mnote	"Missing fcb address"
+	mexit
+&fcbok	anop
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; close file code
+;
+	aif	('%fcb' eq 'hl')&hlpair
+	aif	('%fcb' eq 'de')&depair
+	aif	('%fcb' eq 'bc')&bcpair
+	lxi	d,%fcb
+	ago	&gen
+&hlpair	anop
+	xchg
+	ago	&gen
+&bcpair	anop
+	push	b
+	pop	d
+&depair	anop
+&gen	anop
+	mvi	c,closef 	; Note, requires cpmcommon macro
+	call	bios
+	mvi	c,closef 	; Note, requires cpmcommon macro
+	inr	a
+	cz	fmerr	; Note, requires fmerr macro
+	mend

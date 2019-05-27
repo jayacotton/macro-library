@@ -1,0 +1,43 @@
+	macro	mul
+%lab	mul	%mulc,%mulp,%res
+	gblb	%xmul
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%mulc' eq '')&noparm
+	lhld	%mulc
+	xchg
+	lhld	%mulp
+&noparm	anop
+	call	usmul
+	aif	('%res' eq '')&nostor
+	shld	%res
+&nostor anop
+	aif	(%xmul)&done
+%xmul	setb	1
+	jmp	x$sysin
+usmul	push	b	; unsigned multiply return (de*hl) in hl
+	call	usm2
+	pop	b
+	ret
+usm2	mov	b,h
+	mov	c,l
+	lxi	h,0
+usm3	mov	a,b
+	ora	c
+	rz
+	mov	a,b
+	rar
+	mov	b,a
+	mov	a,c
+	rar
+	mov	c,a
+	jnc	usm4
+	dad	d
+usm4	xchg
+	dad	h
+	xchg	
+	jmp	usm3
+x$sysin	equ	$
+&done	anop
+	mend

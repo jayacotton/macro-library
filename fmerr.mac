@@ -1,0 +1,50 @@
+	macro	fmerr
+	fmerr	
+	gblb	%fmerr
+	aif	(%fmerr)&done
+%fmerr	setb	1
+	jmp	x$sysin
+fmerr	mov	a,c
+	cpi	openf
+	jz	open_er
+	cpi	closef
+	jz	close_er
+	cpi	srchf
+	jz	open_er
+	cpi	writef
+	jz	noro_er
+	cpi	creatf
+	jz	noro_er
+	lxi	d,o$sysin
+	mvi	c,printf
+	call	bdos
+	jmp	0	; bad error no come back.
+	ret
+o$sysin	db	"Unknown i/o error"
+	db	cr,lf
+	db	'$'
+open_er	equ	$
+	lxi	d,c$sysin
+	mvi	c,printf
+	call	bdos
+	ret 
+c$sysin	db	"Open error, file not found"
+	db	cr,lf
+	db	'$'
+close_er equ	$
+	lxi	d,d$sysin
+	mvi	c,printf
+	call	bdos
+	ret
+d$sysin	db	"Close error, file not closed" 
+	db	cr,lf,'$'
+noro_er	equ	$
+	lxi	d,r$sysin
+	mvi	c,printf
+	call	bdos
+	ret
+r$sysin	db	"Disk error, no room"
+	db	cr,lf,'$'
+x$sysin	equ	$
+&done	anop
+	mend

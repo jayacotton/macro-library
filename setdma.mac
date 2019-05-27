@@ -1,0 +1,6 @@
+	macro	setdma
+	setdma	%lab
+	lxi	d,%lab
+	mvi	c,setdma
+	call	bdos
+	mend

@@ -1,0 +1,82 @@
+;
+;  This macro will do an unsigned divide of de by hl and return the
+; results in hl
+;
+;  The code was found in ccc.asm, a bdsc run time support module written by
+;  Leor Zolman.  
+;
+	macro	div
+%lab	div	%divisor
+	gblb	%divis
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%divisor' eq '')&nodiv
+	lxi	h,%divisor
+&nodiv	anop
+	call	usdiv
+	aif	(%divis)&done
+%divis	setb	1
+	jmp	x$sysin
+usdiv	mov	a,h	;unsigned divide: return (DE / HL) in HL
+	ora	l	;return 0 if HL is 0
+	rz
+	push	b
+	call	a$sysin
+	mov	h,b
+	mov	l,c
+	pop	b
+	ret
+a$sysin	mvi	b,1
+b$sysin	mov	a,h
+	ora	a
+	jm	c$sysin
+	dad	h
+	inr	b
+	jmp	b$sysin
+c$sysin	xchg
+d$sysin	mov	a,b
+	lxi	b,0
+e$sysin	push	psw
+f$sysin	call	h$sysin
+	jc	g$sysin
+	inx	b
+	push	d
+	mov	a,d
+	cma
+	mov	d,a
+	mov	a,e
+	cma
+	mov	e,a
+	inx	d
+	dad	d
+	pop	d
+g$sysin	xra	a
+	mov	a,d
+	rar
+	mov	d,a
+	mov	a,e
+	rar
+	mov	e,a
+	pop	psw
+	dcr	a
+	rz
+	push    psw
+	mov	a,c
+	ral
+	mov	c,a
+	mov	a,b
+	ral
+	mov	b,a
+	jmp	f$sysin
+h$sysin	mov	a,h	;this returns C if HL < DE
+	cmp	d       ; unsigned compare 
+	rc
+	rnz
+	mov	a,l
+	cmp	e
+	ret
+x$sysin	equ	$
+&done	anop
+	mend
+	

@@ -1,0 +1,108 @@
+;
+; compare two strings without reguard to
+; case and return a pointer to the beginning
+; of the first string, or a null if not equal
+;
+; on entry  hl -> string 1, and de -> string 2.  Both are null terminated.
+;
+; when done if a=1, hl will be a pointer to the character in string 1 where
+; the match begins.  if a = 0, hl is undeterminate.  de is lost. bc is 
+; unchanged
+;
+	macro	strcasestr
+%lab	strcasestr
+	gblb	%strc
+;
+; later we will have named parameters 
+;
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; hl -> string 1
+; de -> string 2
+; return a = 0 no match
+;        a = 1 match  hl = location of string 1
+;
+	call	StrcStr
+	aif	(%strc)&done
+	jmp	a$sysin
+;
+; my local storage
+;
+d$sysin	dw	0	; String 1 pointer
+c$sysin	dw	0	; copy of string 1
+g$sysin	db	0	; String 1 length
+i$sysin	db	0	; Charater 1
+f$sysin	dw	0	; String 2 pointer
+e$sysin	dw	0	; String 2 pointer	
+h$sysin	db	0	; String 2 length
+j$sysin	db	0	; Charater 2
+;
+; do string compare
+;
+StrcStr	shld	d$sysin	; save pointer 1
+	shld	c$sysin	; and copy of p1
+	xchg	
+	shld	f$sysin	; save pointer 2
+	shld	e$sysin	; save copy of p2 for reset
+	call	StrLen	; check the length of string 2
+	sta	h$sysin	; keep a copy of that
+	cpi	0
+	rz		; outa here
+	lhld	d$sysin	; now check string 1
+	call	StrLen
+	sta	g$sysin	; keep a copy
+	cpi	0
+	rz		; outa here
+;
+; o.k. so, both strings are not null
+;
+l$sysin	lhld	d$sysin	; get pointer to string 1
+	mov	a,m	; get character from memory
+	call	ToLower	; make lower case
+	sta	i$sysin	; and save it
+	lhld	f$sysin	; get pointer to string 2
+	mov	a,m	; get character from memory
+	call	ToLower	; make lower
+	sta	j$sysin	; and save it
+	lhld	d$sysin	; get string 1 pointer	
+	cmp	m
+	jz	k$sysin	; they match
+;
+; none maching character, advance d$sysin, reset f$sysin
+;
+	inx	h	; advance to next byte of string 1
+	shld	d$sysin	; save the pointer
+	shld	c$sysin	; remember this location
+	lhld	e$sysin	; get start of string 2
+	shld	f$sysin	; restore it
+	mvi	a,0	; check for end of string
+	cmp	m	
+	jz	m$sysin	; got to end no match 
+	jmp	l$sysin
+;
+; a matching character, advance to next character
+;
+k$sysin	inx	h	; advance hl
+	shld	d$sysin	; save copy
+	mvi	a,0	; check for end
+	cmp	m
+	jz	n$sysin	; check both strings
+	lhld	f$sysin	; get pointer 2
+	inx	h	; move it
+	shld	f$sysin	; and save it
+	mvi	a,0	; check for end
+	cmp	m
+	jz	n$sysin	; got to end with match	
+	jmp	l$sysin	
+; all done 
+m$sysin	mvi	a,0	; say they dont
+	ret
+n$sysin	mvi	a,1	; say they match
+	lhld	c$sysin	; and here is where they match
+	ret
+%strc	setb	1
+a$sysin	equ	$
+&done	anop
+	mend

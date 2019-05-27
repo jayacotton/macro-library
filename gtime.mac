@@ -1,0 +1,6 @@
+	macro	gtime
+	gtime	%buf,%mode
+	lxi	h,%buf
+	mvi	c,%mode
+	call	gtime
+	mend

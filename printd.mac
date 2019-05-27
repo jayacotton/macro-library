@@ -1,0 +1,62 @@
+	macro	printd
+%lab	printd	%loc,%size
+	gblb	%printd
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%size' ne '1')&two
+	lhld	%loc
+	lxi	d,0
+	mov	e,l
+	ago	&one
+&two	anop	
+	lhld	%loc
+	mov	d,h
+	mov	e,l
+&one	anop
+	mvi	c,%size
+	call	p$sysin
+	aif	(%printd)&done
+%printd	setb	1
+p$sysin	equ	$
+;
+; hl = location of the value to print
+; c = size in bytes of the input value.
+;; for now we can have 1 = 8 bit and 2 = 16 bit number.
+; radix convertion from seminumerical algorithms pg 280
+
+;
+; Binary divid subroutine.
+;  from 8080 programming manual.
+;  bc holds the dividend
+;  d holds the divisor
+;  bc holds the guotient
+;
+d$sysin	mvi	e,9	; bit counter	
+	mov	a,b	; 
+e$sysin	mov	b,a	;
+	mov	a,c
+	mov	c,a
+	dcr	e
+	jz	f$sysin
+	mov	a,b
+	ral	
+	jnc	g$sysin
+	sub	d
+	jmp	e$sysin
+g$sysin	sub	d
+	jnc	e$sysin
+	add	d
+	jmp	e$sysin
+f$sysin	ral
+	mov	e,a
+	mvi	a,0ffh
+	xra	c
+	mov	c,a
+	mov	a,e
+	rar
+	ret
+x$sysin	equ	$
+&done	anop
+	mend
+	
