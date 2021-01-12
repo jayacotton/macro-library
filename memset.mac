@@ -8,11 +8,11 @@
 	lxi	h,%start
 	mvi	a,%what
 	mvi	b,%len
-&noreg	anop
 	call	memset
 	aif	(%mem)&done
 %mem	setb	1
 	jmp	s$sysin
+&noreg	anop
 memset	equ	$
 	mov	m,a
 	inx	h

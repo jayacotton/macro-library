@@ -1,5 +1,5 @@
 	macro	printl
-%lab	printl	%buf
+%lab	printl	%buf,%cr
 	gblb	%printl
 	aif	('%lab' eq '')&nolab
 %lab	equ	$
@@ -22,12 +22,15 @@ printl	mov	a,m
 	pop	h
 	inx	h
 	jmp	printl
-c$sysin	mvi	e,cr
+c$sysin	equ	$
+	aif	('%cr' eq '')&nocr
+	mvi	e,cr
 	mvi	c,conso
 	call	bdos
 	mvi	e,lf
 	mvi	c,conso
 	call	bdos
+&nocr	anop
 	ret
 x$sysin	equ	$
 &done	anop

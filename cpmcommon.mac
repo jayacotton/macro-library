@@ -22,7 +22,7 @@ renf    equ     23      ; rename file
 setdma	equ	26	; set disk i/o buffer address
 readran equ     33      ; read random record
 writran equ     34      ; write random record
-cfs     equ      35      ; compute file size
+cfs	equ	35      ; compute file size
 ;
 fcb	equ	5ch	; location of file control block
 buff	equ	80h	; location of disk input buffer

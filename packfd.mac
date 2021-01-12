@@ -46,7 +46,8 @@ packfn	equ	$
 ;
 ; mess with drive here
 ;	
-	sbi	'a'	; bug here.  there may be upper case
+	lda	c$sysin	; get drive letter
+	sbi	'A'	; bug here.  there may be upper case
 	inr	a
 	mov	m,a
 	lxi	d,c$sysin + 2

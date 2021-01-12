@@ -29,6 +29,9 @@
 	mvi	c,readf 	; Note, requires cpmcommon macro
 	call	bios
 	mvi	c,readf 	; Note, requires cpmcommon macro
-	inr	a
+	cpi	0
+	jz	x$sysin
+	ora	a
 	cz	fmerr	; Note, requires fmerr macro
+x$sysin	equ	$
 	mend
