@@ -1,0 +1,67 @@
+#include "../../macro-library/wto.mac"
+#include "../../macro-library/pre.mac"
+#include "../../macro-library/post.mac"
+#include "../../macro-library/prestack.mac"
+#include "../../macro-library/cpmcommon.mac"
+#include "../../macro-library/fcb.mac"
+#include "../../macro-library/fileopen.mac"
+#include "../../macro-library/fread.mac"
+#include "../../macro-library/fileclose.mac"
+#include "../../macro-library/fmerr.mac"
+#include "../../macro-library/packfd.mac"
+#include "../../macro-library/memset.mac"
+#include "../../macro-library/strcpy.mac"
+#include "../../macro-library/setdma.mac"
+#include "../../macro-library/printl.mac"
+#include "../../macro-library/display.mac"
+
+	common
+	org	100h
+	pre
+	wto	'Print file to console'
+;
+; prep a file name to open
+;
+	lxi	h,rdfcb
+	packfd	'A:TEST.TXT'
+;
+; open the file
+;
+	lxi	h,rdfcb
+	open	hl	
+;
+; set up the dma buffer for file reads
+;
+	setdma	diskbuff
+;
+; make sure we set the sector count to 1
+;
+	mvi	c,2ch
+	mvi	e,1
+	call	bdos
+;
+; read records and print
+;
+loop	fread	rdfcb	
+	jnz	done
+;
+; write the record to console
+;
+	display	diskbuff,'A'
+	jmp	loop
+;
+; close file
+;
+done	lxi	h,rdfcb
+	close	hl
+;
+; leave the program
+;
+	post
+	fmerr
+	memset
+	strcpy
+	prestack
+rdfcb	fcb
+diskbuff	ds	256
+	end

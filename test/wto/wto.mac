@@ -1,0 +1,13 @@
+#include "../../macro-library/wto.mac"
+#include "../../macro-library/pre.mac"
+#include "../../macro-library/post.mac"
+#include "../../macro-library/prestack.mac"
+#include "../../macro-library/cpmcommon.mac"
+
+	common
+	org	100h
+	pre
+	wto	'Hello World'
+	post
+	prestack
+	end

@@ -1,0 +1,113 @@
+;
+; test the radix converion macro
+;
+#include "../../macro-library/wto.mac"
+#include "../../macro-library/pre.mac"
+#include "../../macro-library/post.mac"
+#include "../../macro-library/prestack.mac"
+#include "../../macro-library/cpmcommon.mac"
+#include "../../macro-library/crlf.mac"
+#include "../../macro-library/radix.mac"
+#include "../../macro-library/mod.mac"
+#include "../../macro-library/comp.mac"
+#include "../../macro-library/divide.mac"
+#include "../../macro-library/multip.mac"
+#include "../../macro-library/binascii.mac"
+#include "../../macro-library/printl.mac"
+#include "../../macro-library/memset.mac"
+#include "../../macro-library/pushall.mac"
+#include "../../macro-library/popall.mac"
+
+	common
+	org	100h
+	pre
+;
+; seed the counter to 1
+;
+	lxi	h,1
+	shld	prim
+loop	equ	$
+;
+; print in binary
+;
+	lhld	prim		; get the number to convert
+	lxi	d,2		; set the convertion mode
+	radix			; compute a radix
+	pushall			; save all the registers
+	memset	bigbuf,0,25	; clear the text buffer
+	popall			; restore all the registers
+	binasci	s,bigbuf,,16	; convert the radix to ascii
+	printl	bigbuf		; print out the buffer
+	mvi	c,conso		; put out a space
+	mvi	e,' '
+	call	bdos
+;
+; print in decimal
+;
+	lhld	prim
+	lxi	d,10
+	radix
+	pushall
+	memset	bigbuf,0,25
+	popall
+	binasci	s,bigbuf,,5
+	printl	bigbuf
+	mvi	c,conso
+	mvi	e,' '
+	call	bdos
+;
+; print in octal
+;
+	lhld	prim
+	lxi	d,8
+	radix	
+	pushall
+	memset	bigbuf,0,25
+	popall
+	binasci	s,bigbuf,,6
+	printl	bigbuf
+	pushall
+	mvi	c,conso
+	mvi	e,' '
+	call	bdos
+;
+; print in hex
+;
+	lhld	prim
+	lxi	d,16
+	radix	
+	pushall
+	memset	bigbuf,0,25
+	popall
+	binasci	s,bigbuf,,4
+	printl	bigbuf
+	crlf
+;
+; shift left 1 position
+;
+	lhld	prim
+	dad	h
+	shld	prim
+;
+; check for end state
+;
+	mov	a,l
+	add	h
+	cpi	0
+	jz	done
+	jmp	loop
+; end of task clean up
+done	post			
+; local storage for stack
+	prestack		
+; the mod code	
+	mod			
+; the compair code
+	comp			
+; multiply	
+	mul			
+; divide code
+	div			
+prim	dw	0
+bigbuf	ds	25
+	end
