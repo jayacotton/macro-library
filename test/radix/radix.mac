@@ -1,22 +1,22 @@
 ;
 ; test the radix converion macro
 ;
-#include "../../macro-library/wto.mac"
-#include "../../macro-library/pre.mac"
-#include "../../macro-library/post.mac"
-#include "../../macro-library/prestack.mac"
-#include "../../macro-library/cpmcommon.mac"
-#include "../../macro-library/crlf.mac"
-#include "../../macro-library/radix.mac"
-#include "../../macro-library/mod.mac"
-#include "../../macro-library/comp.mac"
-#include "../../macro-library/divide.mac"
-#include "../../macro-library/multip.mac"
-#include "../../macro-library/binascii.mac"
-#include "../../macro-library/printl.mac"
-#include "../../macro-library/memset.mac"
-#include "../../macro-library/pushall.mac"
-#include "../../macro-library/popall.mac"
+#include "../../wto.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../prestack.mac"
+#include "../../cpmcommon.mac"
+#include "../../crlf.mac"
+#include "../../radix.mac"
+#include "../../mod.mac"
+#include "../../comp.mac"
+#include "../../divide.mac"
+#include "../../multip.mac"
+#include "../../binascii.mac"
+#include "../../printl.mac"
+#include "../../memset.mac"
+#include "../../pushall.mac"
+#include "../../popall.mac"
 
 	common
 	org	100h
@@ -32,12 +32,18 @@ loop	equ	$
 ;
 	lhld	prim		; get the number to convert
 	lxi	d,2		; set the convertion mode
-	radix			; compute a radix
-	pushall			; save all the registers
-	memset	bigbuf,0,25	; clear the text buffer
-	popall			; restore all the registers
-	binasci	s,bigbuf,,16	; convert the radix to ascii
-	printl	bigbuf		; print out the buffer
+; compute a radix
+	radix			
+; save all the registers
+	pushall			
+; clear the text buffer
+	memset	bigbuf,0,25	
+; restore all the registers
+	popall			
+; convert the radix to ascii
+	binasci	s,bigbuf,,16	
+; print out the buffer
+	printl	bigbuf		
 	mvi	c,conso		; put out a space
 	mvi	e,' '
 	call	bdos
