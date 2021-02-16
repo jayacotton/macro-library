@@ -1,0 +1,167 @@
+;
+; word count.  wc.  counts the number of words characters and lines in
+; a text file.
+;
+#include "../../wto.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../prestack.mac"
+#include "../../cpmcommon.mac"
+#include "../../fcb.mac"
+#include "../../fileopen.mac"
+#include "../../fread.mac"
+#include "../../fileclose.mac"
+#include "../../fmerr.mac"
+#include "../../packfd.mac"
+#include "../../memset.mac"
+#include "../../strcpy.mac"
+#include "../../setdma.mac"
+#include "../../printl.mac"
+#include "../../display.mac"
+#include "../../startp.mac"
+#include "../../radix.mac"
+#include "../../mod.mac"
+#include "../../comp.mac"
+#include "../../divide.mac"
+#include "../../multip.mac"
+#include "../../binascii.mac"
+#include "../../snap.mac"
+
+	common	
+NEWLN	equ	0ah
+SPACE	equ	20h
+	org	100h
+	pre
+;	snap	80h,128
+	startp	front,list,count
+;	snap	argb,128
+	mvi	a,0
+	sta	wstat	
+	lxi	h,0
+;	shld	count
+	shld	words
+	shld	chars
+	shld	lines
+	lxi	h,rdfcb	; pointer to read file control block.
+	; create a dummy file name and use packfd to fill in the
+	; fcb.  then read the intended name from the start up
+	; parameters, given at the command line.
+	packfd	'TESTFILE.TXT'
+	; use packfn to replace the dummy file name.
+	; hl still points to rdfcb
+	memset	filenm,0,16
+	strcpy	filenm,argb,16,0
+;	snap	argb,16
+;	snap	filenm,16
+	lhld	list
+	xchg
+	lxi	h,rdfcb
+; put in the file name and drive the user specified
+	call	packfn	
+	lxi	h,rdfcb
+; open the file
+	open	hl
+; set up the dma buffer
+	setdma	dskbuf
+; get to record 1
+	mvi	c,2ch
+	mvi	e,1
+	call	bdos
+; read a record
+loop	fread	rdfcb
+	ora	a
+	jnz	finish	; eof condition
+; prime the record counter
+	mvi	a,128
+	sta	rcnt
+; count the bytes
+	lhld	chars
+	lxi	d,128
+	dad	d
+	shld	chars
+; scan the record
+	lxi	h,dskbuf
+iloop	mov	a,m
+	cpi	NEWLN
+	cz	cntln
+	cpi	SPACE
+	cz	wordtog	
+	inx	h
+; check for end of record
+	lda	rcnt
+	dcr	a
+	sta	rcnt
+; not yet ? goto inner loop
+	jnz	iloop
+; goto outer loop
+	jmp	loop
+; new line = a text line
+cntln	equ	$
+	push	h
+	lhld	lines
+	inx	h
+	shld	lines
+	pop	h	
+	ret
+; toggle the in word, out of word switch
+wordtog	equ	$
+	lda	wstat
+	cpi	0
+	jnz	outwd
+	inr	a
+	sta	wstat
+	ret
+outwd	push	h
+	lhld	words
+	inx	h
+	shld	words
+	pop	h	
+	ret
+finish	equ	$
+	lxi	h,rdfcb
+	close	hl
+; print a report of the counts
+	memset	dskbuf,0,32
+	lhld	chars
+	lxi	d,10
+	radix
+	binasci	s,dskbuf,,5
+	printl	dskbuf
+	mvi	c,conso
+	mvi	e,' '
+	call	bdos	
+	memset	dskbuf,0,32
+	lhld	words	
+	lxi	d,10
+	radix
+	binasci	s,dskbuf,,5
+	printl	dskbuf
+	mvi	c,conso
+	mvi	e,' '
+	call	bdos	
+	memset	dskbuf,0,32
+	lhld	lines
+	lxi	d,10
+	radix
+	binasci	s,dskbuf,,5
+	printl	dskbuf	
+	mvi	c,conso
+	mvi	e,' '
+	call	bdos	
+	printl	filenm,cr
+	post
+	fmerr
+	mul
+	div
+	comp
+	mod
+	prestack
+rdfcb	fcb
+dskbuf	ds	256
+rcnt	ds	1
+lines	ds	2
+words	ds	2
+wstat	ds	1
+chars	ds	2
+filenm	ds	16
+	end
