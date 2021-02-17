@@ -9,6 +9,7 @@
 #include "../../cpmcommon.mac"
 #include "../../fcb.mac"
 #include "../../fileopen.mac"
+#include "../../fileseek.mac"
 #include "../../fread.mac"
 #include "../../fileclose.mac"
 #include "../../fmerr.mac"
@@ -17,6 +18,8 @@
 #include "../../strcpy.mac"
 #include "../../setdma.mac"
 #include "../../printl.mac"
+#include "../../puts.mac"
+#include "../../putc.mac"
 #include "../../display.mac"
 #include "../../startp.mac"
 #include "../../radix.mac"
@@ -25,20 +28,16 @@
 #include "../../divide.mac"
 #include "../../multip.mac"
 #include "../../binascii.mac"
-#include "../../snap.mac"
 
 	common	
 NEWLN	equ	0ah
 SPACE	equ	20h
 	org	100h
 	pre
-;	snap	80h,128
 	startp	front,list,count
-;	snap	argb,128
 	mvi	a,0
 	sta	wstat	
 	lxi	h,0
-;	shld	count
 	shld	words
 	shld	chars
 	shld	lines
@@ -51,8 +50,6 @@ SPACE	equ	20h
 	; hl still points to rdfcb
 	memset	filenm,0,16
 	strcpy	filenm,argb,16,0
-;	snap	argb,16
-;	snap	filenm,16
 	lhld	list
 	xchg
 	lxi	h,rdfcb
@@ -64,9 +61,7 @@ SPACE	equ	20h
 ; set up the dma buffer
 	setdma	dskbuf
 ; get to record 1
-	mvi	c,2ch
-	mvi	e,1
-	call	bdos
+	fseek	1
 ; read a record
 loop	fread	rdfcb
 	ora	a
@@ -121,33 +116,12 @@ finish	equ	$
 	lxi	h,rdfcb
 	close	hl
 ; print a report of the counts
-	memset	dskbuf,0,32
 	lhld	chars
-	lxi	d,10
-	radix
-	binasci	s,dskbuf,,5
-	printl	dskbuf
-	mvi	c,conso
-	mvi	e,' '
-	call	bdos	
-	memset	dskbuf,0,32
+	call	dolots
 	lhld	words	
-	lxi	d,10
-	radix
-	binasci	s,dskbuf,,5
-	printl	dskbuf
-	mvi	c,conso
-	mvi	e,' '
-	call	bdos	
-	memset	dskbuf,0,32
+	call	dolots
 	lhld	lines
-	lxi	d,10
-	radix
-	binasci	s,dskbuf,,5
-	printl	dskbuf	
-	mvi	c,conso
-	mvi	e,' '
-	call	bdos	
+	call	dolots
 	printl	filenm,cr
 	post
 	fmerr
@@ -155,6 +129,16 @@ finish	equ	$
 	div
 	comp
 	mod
+dolots	equ	$
+	push	h
+	memset	dskbuf,0,32
+	pop	h
+	lxi	d,10
+	radix
+	binasci	s,dskbuf,,5
+	puts	dskbuf	
+	putc	' '
+	ret
 	prestack
 rdfcb	fcb
 dskbuf	ds	256
