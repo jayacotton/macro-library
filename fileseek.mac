@@ -1,0 +1,9 @@
+	macro	fseek
+%lab	fseek	%sector
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	mvi	c,2ch
+	mvi	e,%sector
+	call	bdos
+	mend

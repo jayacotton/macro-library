@@ -1,0 +1,30 @@
+	macro	puts
+%lab	puts	%buf
+	gblb	%puts
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%buf' eq '')&noreg
+	lxi	h,%buf
+&noreg	anop
+	call	puts
+	aif	(%puts)&done
+%puts	setb	1
+	jmp	x$sysin
+; hl points to a null terminated string, or provide a pointer
+puts	mov	a,m
+	cpi	0
+	jz	c$sysin
+	mov	e,a
+	mvi	c,conso
+	push	h
+	call	bdos
+	pop	h
+	inx	h
+	jmp	puts
+c$sysin	equ	$
+	ret
+x$sysin	equ	$
+&done	anop
+	mend	
+
