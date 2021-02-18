@@ -17,40 +17,65 @@
 	jmp	x$sysin
 c$sysin	db	%name
 	db	0
+m$sysin	dw	c$sysin
 	aif	(%gen)&done
 %gen	setb	1
 ;
 ; pack file descriptor done here
 ;
 packfn	equ	$
+	xchg
+	shld	m$sysin	; save the name string pointer
+	xchg
 ;
 ; so we need to deconstruct the file name string and put the
 ; parts into the correct places in the file control block.
 ; also need to prep the storage with spaces the make clean
 ; file names.
 ; 
-	push	hl
+	push	hl	; hl points to the fcb
 	inx	h	; bump past the drive nr.
 	mvi	a,' '
 	mvi	b,8+3+1	; file name and extension
-	call	memset
+	call	memset	; fill fcb name space with ' '
 	pop	hl
 ; 
 ; if the file name byte 2 is a ':' then we need to fiddle with the 
 ; drive number
 ; 
 	mvi	m,0
-	lda	c$sysin + 1
+;
+	xchg
+	lhld	m$sysin
+	inx	h
+	mov	a,m
+	xchg
+;	lda	c$sysin + 1
 	cpi	':'
-	jnz	n$sysin
+;
+	xchg
+	lhld	m$sysin
+	xchg
+;	jnz	n$sysin
 ;
 ; mess with drive here
 ;	
-	lda	c$sysin	; get drive letter
+;	lda	c$sysin	; get drive letter
+	xchg
+	lhld	m$sysin
+	mov	a,m
+	xchg
+;
 	sbi	'A'	; bug here.  there may be upper case
 	inr	a
 	mov	m,a
-	lxi	d,c$sysin + 2
+;	lxi	d,c$sysin + 2
+	xchg
+	lhld	m$sysin
+	inx	h
+	inx	h
+	xchg
+;
 ; 
 ;  work on file name here
 ;
