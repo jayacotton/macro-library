@@ -19,7 +19,6 @@ fmerr	mov	a,c
 	mvi	c,printf
 	call	bdos
 	jmp	0	; bad error no come back.
-	ret
 o$sysin	db	"Unknown i/o error"
 	db	cr,lf
 	db	'$'
@@ -27,7 +26,7 @@ open_er	equ	$
 	lxi	d,c$sysin
 	mvi	c,printf
 	call	bdos
-	ret 
+	jmp	0
 c$sysin	db	"Open error, file not found"
 	db	cr,lf
 	db	'$'
@@ -42,7 +41,7 @@ noro_er	equ	$
 	lxi	d,r$sysin
 	mvi	c,printf
 	call	bdos
-	ret
+	jmp	0
 r$sysin	db	"Disk error, no room"
 	db	cr,lf,'$'
 x$sysin	equ	$
