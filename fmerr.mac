@@ -15,6 +15,8 @@ fmerr	mov	a,c
 	jz	noro_er
 	cpi	creatf
 	jz	noro_er
+	cpi	delf
+	jz	delet_er
 	lxi	d,o$sysin
 	mvi	c,printf
 	call	bdos
@@ -36,6 +38,13 @@ close_er equ	$
 	call	bdos
 	ret
 d$sysin	db	"Close error, file not closed" 
+	db	cr,lf,'$'
+delet_er equ	$
+	lxi	d,e$sysin
+	mvi	c,printf
+	call	bdos
+	jmp	0
+e$sysin	db	"Delete error, file not found"
 	db	cr,lf,'$'
 noro_er	equ	$
 	lxi	d,r$sysin

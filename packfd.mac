@@ -56,7 +56,8 @@ packfn	equ	$
 	xchg
 	lhld	m$sysin
 	xchg
-;	jnz	n$sysin
+;
+	jnz	n$sysin
 ;
 ; mess with drive here
 ;	
@@ -92,8 +93,8 @@ n$sysin	equ	$
 	mvi	b,4	; upto 3 bytes
 	mvi	c,0	; stop at null
 	call	strcpy	; copy
-	xra	a
-	mov	m,a
+;	xra	a
+;	mov	m,a
 	lxi	d,20
 	dad	d
 	mov	m,a
