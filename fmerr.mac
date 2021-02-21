@@ -4,7 +4,18 @@
 	aif	(%fmerr)&done
 %fmerr	setb	1
 	jmp	x$sysin
-fmerr	mov	a,c
+fmerr	equ	$
+	lda	errno
+	rrc
+	rrc
+	rrc
+	rrc
+	ani	0fh
+	call 	h$sysin
+	lda	errno
+	ani	0fh
+	call	h$sysin	
+	mov	a,c
 	cpi	openf
 	jz	open_er
 	cpi	closef
@@ -21,7 +32,17 @@ fmerr	mov	a,c
 	mvi	c,printf
 	call	bdos
 	jmp	0	; bad error no come back.
-o$sysin	db	"Unknown i/o error"
+h$sysin	equ	$
+	cpi	10
+	jnc	p$sysin
+	adi	'0'
+	jmp	i$sysin
+p$sysin	adi	'A'-10
+i$sysin	mov	e,a
+	mvi	c,2
+	call	bdos
+	ret
+o$sysin	db	" Unknown i/o error"
 	db	cr,lf
 	db	'$'
 open_er	equ	$
@@ -29,7 +50,7 @@ open_er	equ	$
 	mvi	c,printf
 	call	bdos
 	jmp	0
-c$sysin	db	"Open error, file not found"
+c$sysin	db	" Open error, file not found"
 	db	cr,lf
 	db	'$'
 close_er equ	$
@@ -37,22 +58,23 @@ close_er equ	$
 	mvi	c,printf
 	call	bdos
 	ret
-d$sysin	db	"Close error, file not closed" 
+d$sysin	db	" Close error, file not closed" 
 	db	cr,lf,'$'
 delet_er equ	$
 	lxi	d,e$sysin
 	mvi	c,printf
 	call	bdos
 	jmp	0
-e$sysin	db	"Delete error, file not found"
+e$sysin	db	" Delete error, file not found"
 	db	cr,lf,'$'
 noro_er	equ	$
 	lxi	d,r$sysin
 	mvi	c,printf
 	call	bdos
 	jmp	0
-r$sysin	db	"Disk error, no room"
+r$sysin	db	" Disk error, no room"
 	db	cr,lf,'$'
+errno	db	0
 x$sysin	equ	$
 &done	anop
 	mend

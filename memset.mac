@@ -1,6 +1,9 @@
 	macro	memset
-	memset	%start,%what,%len
+%lab	memset	%start,%what,%len
 	gblb	%mem
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
 ; hl = address of memory to fill
 ; a = byte to store
 ; b = number of bytes

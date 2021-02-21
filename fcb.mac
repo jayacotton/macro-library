@@ -7,16 +7,19 @@
 ;
 ; creating storage
 ;
+; file struct
 s$sysin	equ	$
-	ds	1	;  drive letter
-	ds	8	; file name
-	ds	3	; file extension
-	ds	1	; file extent
-	ds	2
-	ds	1	; number of records in present extent
-	ds	16	; cpm disc map
-	ds	1	; next record to read or write
-	ds	3	; random record number (24 bits)
+	db	0	;  drive letter
+	dw	0,0,0,0	; file name
+	dw	0	; file extension
+	db	0
+	db	0	; file extent
+	dw	0	
+	db	0	; number of records in present extent
+	dw	0,0,0,0,0,0,0,0	; cpm disc map
+	db	0	; next record to read or write
+	dw	0	; random record number (24 bits)
+	db	0
 e$sysin	equ	$
 	aif	(%fcb)&done
 %fcb	setb	1

@@ -11,9 +11,15 @@
 	aif	(%putc)&done
 %putc	setb	1
 	jmp	x$sysin
-putc	mov	e,a
+putc	push	h
+	push	d
+	push	b
+	mov	e,a
 	mvi	c,conso
 	call	bdos
+	pop	b
+	pop	d
+	pop	h
 	ret
 x$sysin	equ	$
 &done	anop

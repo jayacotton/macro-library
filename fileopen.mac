@@ -28,6 +28,7 @@
 &gen	anop
 	mvi	c,openf 	; Note, requires cpmcommon macro
 	call	bios
+	sta	errno
 	mvi	c,openf 	; Note, requires cpmcommon macro
 	inr	a
 	cz	fmerr	; Note, requires fmerr macro

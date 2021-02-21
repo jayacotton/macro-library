@@ -28,10 +28,7 @@
 &gen	anop
 	mvi	c,readf 	; Note, requires cpmcommon macro
 	call	bios
-	mvi	c,readf 	; Note, requires cpmcommon macro
-	cpi	0
-	jz	x$sysin
-	ora	a
-	cz	fmerr	; Note, requires fmerr macro
-x$sysin	equ	$
+	sta	errno		; not really but an indicator
+; ff = eof, or empty
+; others, not certain
 	mend

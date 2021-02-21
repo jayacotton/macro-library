@@ -36,7 +36,7 @@ packfn	equ	$
 	push	hl	; hl points to the fcb
 	inx	h	; bump past the drive nr.
 	mvi	a,' '
-	mvi	b,8+3+1	; file name and extension
+	mvi	b,8+3	; file name and extension
 	call	memset	; fill fcb name space with ' '
 	pop	hl
 ; 
@@ -50,7 +50,6 @@ packfn	equ	$
 	inx	h
 	mov	a,m
 	xchg
-;	lda	c$sysin + 1
 	cpi	':'
 ;
 	xchg
@@ -61,7 +60,6 @@ packfn	equ	$
 ;
 ; mess with drive here
 ;	
-;	lda	c$sysin	; get drive letter
 	xchg
 	lhld	m$sysin
 	mov	a,m
@@ -70,7 +68,6 @@ packfn	equ	$
 	sbi	'A'	; bug here.  there may be upper case
 	inr	a
 	mov	m,a
-;	lxi	d,c$sysin + 2
 	xchg
 	lhld	m$sysin
 	inx	h
@@ -93,8 +90,6 @@ n$sysin	equ	$
 	mvi	b,4	; upto 3 bytes
 	mvi	c,0	; stop at null
 	call	strcpy	; copy
-;	xra	a
-;	mov	m,a
 	lxi	d,20
 	dad	d
 	mov	m,a
