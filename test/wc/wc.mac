@@ -28,6 +28,7 @@
 #include "../../divide.mac"
 #include "../../multip.mac"
 #include "../../binascii.mac"
+#include "../../snap.mac"
 
 	common	
 NEWLN	equ	0ah
@@ -45,25 +46,28 @@ SPACE	equ	20h
 	; create a dummy file name and use packfd to fill in the
 	; fcb.  then read the intended name from the start up
 	; parameters, given at the command line.
+	; NOTICE:  Omit the drive letter, it will be set to zero until
+	; the input file name is processed.
 	packfd	'TESTFILE.TXT'
 	; use packfn to replace the dummy file name.
 	; hl still points to rdfcb
 	memset	filenm,0,16
 	strcpy	filenm,argb,16,0
+	memset	rdfcb,0,fcbsz
 	lhld	list
 	xchg
-	lxi	h,rdfcb
 ; put in the file name and drive the user specified
-	call	packfn	
 	lxi	h,rdfcb
-; open the file
-	open	hl
+	call	packfn	
 ; set up the dma buffer
-	setdma	dskbuf
+; open the file
+	open	rdfcb
+;	setdma	dskbuf
 ; get to record 1
-	fseek	1
+;	fseek	1
 ; read a record
 loop	fread	rdfcb
+; reg a has status
 	ora	a
 	jnz	finish	; eof condition
 ; prime the record counter
@@ -141,7 +145,8 @@ dolots	equ	$
 	ret
 	prestack
 rdfcb	fcb
-dskbuf	ds	256
+;dskbuf	ds	256
+dskbuf	equ	80h
 rcnt	ds	1
 lines	ds	2
 words	ds	2
