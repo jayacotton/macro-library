@@ -1,0 +1,185 @@
+;
+;  work a bit like unix.  
+;
+;  find . -name string (print assumed)      Search the current drive 
+;          ^^^^  full or partial name string.
+;
+;  find .  Prints all the file names on the current drive.
+;
+;  find * -name string     Search all the drives for the file name 
+;  
+#include "../../wto.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../prestack.mac"
+#include "../../cpmcommon.mac"
+#include "../../fcb.mac"
+#include "../../fileopen.mac"
+#include "../../fileseek.mac"
+#include "../../fread.mac"
+#include "../../fileclose.mac"
+#include "../../fmerr.mac"
+#include "../../packfd.mac"
+#include "../../memset.mac"
+#include "../../strcpy.mac"
+#include "../../setdma.mac"
+#include "../../printl.mac"
+#include "../../puts.mac"
+#include "../../putc.mac"
+#include "../../display.mac"
+#include "../../startp.mac"
+#include "../../radix.mac"
+#include "../../mod.mac"
+#include "../../comp.mac"
+#include "../../divide.mac"
+#include "../../multip.mac"
+#include "../../binascii.mac"
+#include "../../snap.mac"
+#include "../../crlf.mac"
+#include "../../printerrno.mac"
+
+
+	common
+	org	100h
+	pre
+	startp	front,list,count
+;	snap	bcount,32
+;	snap	list,32
+;	snap	count,4
+;
+; handle start paramets
+;
+	lxi	h,fifcb
+	packfd	'????????.???'
+;
+; bug in count.
+; 
+	lda	count
+	ora	a
+	jz	skip
+;	memset	fifcb+9,32,3
+	lhld	list+2
+	xchg
+	lxi	h,fifcb+9
+	mvi	b,3
+	mvi	c,0
+	call	strcpy
+;	strcpy	fifcb+9,argb,3,0	
+;	snap	fifcb,22
+skip	lxi	h,curdriv
+	mvi	m,0	; set drive a:
+;
+; figure out how many drives are mounted
+;
+;
+scanlp	equ	$
+;
+; select drive
+;
+	lxi	h,fifcb
+	lda	curdriv
+	mov	m,a
+	mvi	c,0eh
+	mov	e,a
+	call	bdos
+	call	dorest
+	call	nxtdriv
+;
+; test for end of drive list
+;
+;	lxi	h,drivcnt
+;	dcr	m
+;	jnz	scanlp
+;	jmp	done
+	jmp	scanlp
+nxtdriv	lxi	h,curdriv
+	inr	m
+	ret
+dorest	equ	$
+	lxi	d,fifcb
+	mvi	c,srchf
+	call	bdos
+	sta	errno
+	inr	a
+	rz
+	call	prtname
+;
+; loop through the next entries
+;
+; ??? need to packfd again ?
+loop	lxi	d,fifcb
+	mvi	c,srchn
+	call	bdos
+	sta	errno
+	inr	a
+	rz
+	call	prtname
+	jmp	loop
+;
+; print file name in fcb 
+;
+; errno has the value return from find first and next 
+; directory entry.
+; this is an index into the dskbuffer where the file name is
+; located.  there can be up to 4 records in the buffer.
+;
+prtname	equ	$
+;
+; if console active, quit
+;
+	mvi	c,getcos
+	call	bdos
+	inr 	a
+	jz	done
+;
+	lxi	h,dskbuf  
+;
+; errno has the index
+;
+	lda	errno
+	ani	3
+; multiply by 32 (size of entry in buffer)
+	rlc
+	rlc
+	rlc
+	rlc
+	rlc
+	mvi	d,0
+	mov	e,a
+; and bump up to the string
+	dad	d
+	inx	h
+	lda	curdriv
+	adi	'A'
+	putc
+	putc	':'
+	mvi	b,8+3
+prt1	push	b
+	mov	a,m
+	inx	h
+	putc
+	pop	b
+	dcr	b
+	jnz	prt1	
+	crlf
+	ret
+done	equ	$
+	post
+	fmerr
+	strcpy
+	memset
+;
+; global storage
+;
+	prestack
+filenm	ds	8+3	; space for constructing the file name
+drivcnt	dw	0	; store the drive count here.
+dskbuf	equ	80h
+fifcb	fcb
+curdriv	db	0
+diskflg	db	0	; 0 = look on current drive only.
+			; 1 = search all drives on the system.
+fileflg	db	0	; 0 = find a file by name
+			; 1 = find files by wild card
+wild	ds	32	; storage for file name, or wild card key
+	end
