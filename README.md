@@ -11,3 +11,9 @@ crlf will in fact call the first invocation.  This kind of code allows for
 complex output, with reduced code size.  
 
 TODO:  write a document for the functions.......
+
+I have added a bunch of test code under test/...  there you will find
+a really handy tool for search all the drives on your machine.  (mine has 10, plus upto 
+6 network drives).
+
+
