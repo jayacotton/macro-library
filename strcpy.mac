@@ -31,11 +31,11 @@ strcpy	equ	$
 s$sysin ldax	d	; get byte pointed to by de
 	cmp	c	; comp for terminal byte
 	rz		; it was
-	dcr	b	; count the byte
-	rz		; was that all
 	mov	m,a	; store the byte in mem
 	inx	d	; bump the indexs
 	inx	h
+	dcr	b	; count the byte
+	rz		; was that all
 	jmp	s$sysin
 x$sysin	equ	$
 &done	anop

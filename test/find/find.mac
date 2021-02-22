@@ -43,9 +43,6 @@
 	org	100h
 	pre
 	startp	front,list,count
-;	snap	bcount,32
-;	snap	list,32
-;	snap	count,4
 ;
 ; handle start paramets
 ;
@@ -57,17 +54,21 @@
 	lda	count
 	ora	a
 	jz	skip
-;	memset	fifcb+9,32,3
 	lhld	list+2
 	xchg
 	lxi	h,fifcb+9
 	mvi	b,3
 	mvi	c,0
 	call	strcpy
-;	strcpy	fifcb+9,argb,3,0	
-;	snap	fifcb,22
-skip	lxi	h,curdriv
-	mvi	m,0	; set drive a:
+skip	mvi	a,0	; preset drive to a:
+	sta	curdriv
+	lhld	list
+	mov	a,m
+	cpi	'.'	; if parameter is . then scan all drives
+	jz	sknext
+	sbi	'A'	; else only one drive
+	sta	curdriv
+sknext	equ	$
 ;
 ; figure out how many drives are mounted
 ;
@@ -87,11 +88,14 @@ scanlp	equ	$
 ;
 ; test for end of drive list
 ;
-;	lxi	h,drivcnt
-;	dcr	m
-;	jnz	scanlp
-;	jmp	done
-	jmp	scanlp
+; if the drive search was a . search then all or a drive letter then we only
+; search one drive, else all of them.
+;
+	lhld	list	; get pointer to first parameter
+	mov	a,m
+	cpi	'.'
+	jz	scanlp
+	jmp	done	
 nxtdriv	lxi	h,curdriv
 	inr	m
 	ret
@@ -168,6 +172,7 @@ done	equ	$
 	fmerr
 	strcpy
 	memset
+	snap
 ;
 ; global storage
 ;
