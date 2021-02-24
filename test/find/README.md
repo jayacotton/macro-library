@@ -13,3 +13,15 @@ To build this program you need:  MACRO and ASM8080.  These are also on my repo.
 
 make clean; make  will build a file called find.hex  you then down load that to your
 CP/M machine, and say load find on you CP/M machine.  From there you are up a running.
+
+```
+C>find . for
+E:FA16A   FOR
+I:RATFOR  FOR
+I:URATFOR FOR
+J:RATFOR  FOR
+J:URATFOR FOR
+
+ZSDOS error on K: No Drive
+Call: 14
+```
