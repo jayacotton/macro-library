@@ -37,6 +37,7 @@
 #include "../../crlf.mac"
 #include "../../printerrno.mac"
 #include "../../strlen.mac"
+#include "../../strchar.mac"
 
 
 	common
@@ -51,8 +52,22 @@
 	lda	count
 	ora	a
 	jz	skip
+; lets see if there is a complete file name in here.
+	lhld	list+2
+	xchg
+	strchar	,12,'.'
+; if de-> points to '.' then we assume this is a full
+; file name.
+	ldax	d	; get the byte
+	cpi	'.' 
+	jnz	skip1
+; o.k. its a file name
+	lhld	list+2
+	xchg
+	call	packfn
+	jmp	skip
 ; clear out the name buffer (set to space)
-	memset	filenm,32,11
+skip1	memset	filenm,32,11
 	lhld	list+2
 ; find the string length of the input file extension
 	strlen
@@ -64,8 +79,6 @@
 	lxi	h,filenm
 ; copy the file extension string to filenm
 	call	strcpy	
-;	lhld	list+2
-;	xchg
 	lxi	d,filenm
 	lxi	h,fifcb+9
 	mvi	b,3
@@ -123,7 +136,6 @@ dorest	equ	$
 ;
 ; loop through the next entries
 ;
-; ??? need to packfd again ?
 loop	lxi	d,fifcb
 	mvi	c,srchn
 	call	bdos
