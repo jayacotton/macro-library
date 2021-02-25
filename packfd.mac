@@ -33,12 +33,12 @@ packfn	equ	$
 ; also need to prep the storage with spaces the make clean
 ; file names.
 ; 
-	push	hl	; hl points to the fcb
+	push	h	; hl points to the fcb
 	inx	h	; bump past the drive nr.
 	mvi	a,' '
 	mvi	b,8+3	; file name and extension
 	call	memset	; fill fcb name space with ' '
-	pop	hl
+	pop	h
 ; 
 ; if the file name byte 2 is a ':' then we need to fiddle with the 
 ; drive number
@@ -78,12 +78,12 @@ packfn	equ	$
 ;  work on file name here
 ;
 n$sysin	equ	$
-	push	hl	; save start of fcb
+	push	h	; save start of fcb
 	inx	h	; skip drive number
 	mvi	b,9	; upto 8 bytes
 	mvi	c,'.'	; stop at .
 	call	strcpy	; copy
-	pop	hl	; get fcb back
+	pop	h	; get fcb back
 	lxi	b,9	; up to file extension
 	dad	b	
 	inx	d	; get past the .

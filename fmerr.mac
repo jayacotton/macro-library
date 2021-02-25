@@ -17,17 +17,17 @@ fmerr	equ	$
 	call	h$sysin	
 	mov	a,c
 	cpi	openf
-	jz	open_er
+	jz	opener
 	cpi	closef
-	jz	close_er
+	jz	closeer
 	cpi	srchf
-	jz	open_er
+	jz	opener
 	cpi	writef
-	jz	noro_er
+	jz	noroer
 	cpi	creatf
-	jz	noro_er
+	jz	noroer
 	cpi	delf
-	jz	delet_er
+	jz	deleter
 	lxi	d,o$sysin
 	mvi	c,printf
 	call	bdos
@@ -42,37 +42,37 @@ i$sysin	mov	e,a
 	mvi	c,2
 	call	bdos
 	ret
-o$sysin	db	" Unknown i/o error"
+o$sysin	db	' Unknown i/o error'
 	db	cr,lf
 	db	'$'
-open_er	equ	$
+opener	equ	$
 	lxi	d,c$sysin
 	mvi	c,printf
 	call	bdos
 	jmp	0
-c$sysin	db	" Open error, file not found"
+c$sysin	db	' Open error, file not found'
 	db	cr,lf
 	db	'$'
-close_er equ	$
+closeer equ	$
 	lxi	d,d$sysin
 	mvi	c,printf
 	call	bdos
 	ret
-d$sysin	db	" Close error, file not closed" 
+d$sysin	db	' Close error, file not closed' 
 	db	cr,lf,'$'
-delet_er equ	$
+deleter equ	$
 	lxi	d,e$sysin
 	mvi	c,printf
 	call	bdos
 	jmp	0
-e$sysin	db	" Delete error, file not found"
+e$sysin	db	' Delete error, file not found'
 	db	cr,lf,'$'
-noro_er	equ	$
+noroer	equ	$
 	lxi	d,r$sysin
 	mvi	c,printf
 	call	bdos
 	jmp	0
-r$sysin	db	" Disk error, no room"
+r$sysin	db	' Disk error, no room'
 	db	cr,lf,'$'
 errno	db	0
 x$sysin	equ	$
