@@ -1,0 +1,126 @@
+MACRO-LIBRARY A library of macro's tailord for 8080/z80 microprocessors
+and CP/M 2.2 or 3.0.
+
+These macros are intedended to be processed by MACRO and assembled with
+asm8080.
+
+See https://github.com/jayacotton/macro for further information about
+MACRO and https://github.com/jayacotton/asm8080 for information about
+asm8080.
+
+In general you should assume that all your registers will be used.  So,
+any valuble data must be stored or pushed befor using any of these macros.
+
+The macro's 
+
+16550.mac
+	The 16550 is an SIO chip used on many CP/M systems, and RC2014
+in particular.  Most of the code was written by Ben Chong, and I did the
+macro wrapper.
+
+Invocation:
+	#include "16550.mac"
+	.......
+
+	<optional name>	s16550	getchar,putchar
+
+The optional name is just that.  You don't need to provide a lable
+here, but if you do, you can call it to reinit the sio chip.
+
+Getchar, and putchar are arbitrary function names.  You must provide 
+a name there so you can call the name to get or put a character on the
+sio chip.
+
+This code does not provide interrupt driven i/o.  The device base address
+is 0d0hex.
+
+binascii.mac
+	This macro will convert a string of binary digits into ascii
+for further processing.
+
+Invocation:
+	#include "binascii.mac"
+	.......
+
+	<optional name>	binascii	opt,out,buf,count
+
+		opt is print (p) or store (s)
+		out is 0 or address for storage
+		buf is output buffer
+		count is number of digits to convert
+
+See ~/test/radix for an example of binascii usage
+
+btod.mac
+	This macro will convert the indicated binary number to base 10
+and return HL pointing to a string of ascii digits.
+
+	The macro requires additional macros, memset, usmod, usdiv, usmul, 
+sub, and uslt.
+
+Invocation:
+	#include "btod.mac"  / and a bunch of others.
+	.......
+
+	<optional name>	btod	mybinhere
+
+		mybinhere is the address of the 16 bit binary (base 2) 
+			number to be converted.
+
+	On exit, HL -> an ascii string of base 10 digits.  
+
+comp.mac
+../cpmcommon.mac
+../cpmcosint.mac
+../cpmpchar.mac
+../cpmwrite.mac
+../crlf.mac
+../display.mac
+../divide.mac
+../dreg.mac
+../ds1307.mac
+../fcb.mac
+../fileclose.mac
+../filecreat.mac
+../filedelete.mac
+../fileopen.mac
+../fileseek.mac
+../fmerr.mac
+../fread.mac
+../fwrite.mac
+../gdate.mac
+../gtime.mac
+../hk24c32.mac
+../i2c.mac
+../lcd.mac
+../lvect.mac
+../memset.mac
+../mod.mac
+../multip.mac
+../packfd.mac
+../popall.mac
+../post.mac
+../pre.mac
+../prestack.mac
+../printd.mac
+../printerrno.mac
+../printl.mac
+../pushall.mac
+../putc.mac
+../puts.mac
+../radix.mac
+../rpop.mac
+../rpush.mac
+../rtchack.mac
+../setdma.mac
+../sio2.mac
+../snap.mac
+../startp.mac
+../strcasestr.mac
+../strcpy.mac
+../strlen.mac
+../subtract.mac
+../swapstk.mac
+../tolower.mac
+../wto.mac
+../wtob.mac
