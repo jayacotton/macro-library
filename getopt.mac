@@ -1,0 +1,152 @@
+; what the user sees at startup
+;  program -Llst: -Ffile  etc.
+;
+; get opt macro, modled after the bsd version of
+; getopt.
+;
+;  <name> getopt count,list,'options:options' 
+;
+;  the count and list refer to startp options, use the same
+; names.
+;
+	macro	getopt
+%lab	getopt	%cnt,%lst,%str
+	gblb	%getopt
+;
+;  cnt is the count from startp macro
+;  lst it the list from startp macro
+;  str is a string of start options
+;
+&nolab	anop
+	aif	('%cnt' ne '')&goodcnt
+	mnote	'can't work without count'
+	mexit
+&goodcnt anop
+	aif	('%lst' ne '')&goodlst
+	mnote	'can't work without a list'
+	mexit
+&goodlst anop
+	aif	('%str' ne '')&goodstr
+	mnote	'can't work without a command list'
+	mexit
+&goodstr anop
+	aif	(%getopt)&done
+%getopt	setb	1	
+	aif	('%lab' eq '')&nolab
+%lab	equ	$	; optional entry point
+;
+; now down to bussiness 
+;
+; need to figure out if we have initialized the counter
+; and list pointer, do not reset them for each option
+;
+	; do something clever here and
+	lda	f$sysin
+	cpi	0
+	jz	a$sysin
+	lda	%cnt
+;	inr	a	; count seems to be off by one
+	sta	c$sysin	; save a copy of the count
+	lxi	h,%lst
+	shld	l$sysin	; save pointer to list of pointers
+	xra	a
+	sta	f$sysin	; mark our passage.
+;
+;  each call to getopt will process the next arg in the start
+;  parameter list.  Count is used to keep track of the position
+;  in the list.  When count hits zero, we return a -1.  If the
+;  start parameter is not in the option list, we return 0.  If
+;  the parameter is matched to an item in the list we return the
+;  item.  HL will point to the option data if needed....
+;
+;  Use %lst[%cnt] to pick up the item.  Note we process the list
+;  back to front.  Also, remember that we need to look for the
+;  flag in the option list.
+;
+a$sysin	lda	c$sysin	; get the count
+;
+; get an arg pointer from the list
+;
+		; hl is a pointer to a list of pointers
+	lhld	l$sysin
+;
+	rlc		; count *2 
+	mov	e,a
+	mvi	d,0
+	dad	d	; list[count]
+	mov	e,m	; hl = list[count]
+	inx	h
+	mov	d,m
+	xchg
+;
+	mov	a,m	; should be a '-'
+	cpi	'-'
+	jnz	m$sysin ; error (force syntax)
+	inx	h	; now at the flag byte
+	mov	a,m
+	inx	h	; now at the flag options
+;
+; now search the command options list for a match
+;
+	push	h	; save our options pointer
+;do a strchar search
+	lxi	h,o$sysin
+z$sysin	mov	b,a
+	xra	a
+	cmp	m
+	jz	n$sysin
+	mov	a,b
+	cmp	m	; test a byte
+	jz	h$sysin
+; that was not a match
+	inx	h	; up to next byte
+	jmp	z$sysin
+;
+; we found a flag that matches
+; return the flag, and hl pointing to the
+; option data
+;
+h$sysin	equ	$
+; count the command we just found
+	lxi	h,c$sysin
+	dcr	m
+; and the pointer to the rest of the arg
+	pop	h
+	jmp	x$sysin
+;
+; The arg flag must have a '-' in front of
+; it.  And following that must be 1 character in length.
+; The option data is next in line. 
+;
+n$sysin	lda	c$sysin	; need to count the miss 
+	dcr	a
+	sta	c$sysin
+	mvi	a,0	; flag not found
+	jmp	x$sysin
+m$sysin	mvi	a,-1	; error, or end of list
+	jmp	x$sysin	
+; local storage
+;
+f$sysin	db	-1	
+c$sysin	db	0	; copy of count
+l$sysin	dw	0	; copy of list
+o$sysin	db	%str
+	db	0	; null terminator
+x$sysin	equ	$	; macro exit point
+&done	anop
+	mend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

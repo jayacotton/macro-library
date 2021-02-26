@@ -1,0 +1,114 @@
+;
+; test the getopt parser
+;
+#include "../../wto.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../prestack.mac"
+#include "../../cpmcommon.mac"
+#include "../../fcb.mac"
+#include "../../fileopen.mac"
+#include "../../fileseek.mac"
+#include "../../fread.mac"
+#include "../../fileclose.mac"
+#include "../../fmerr.mac"
+#include "../../packfd.mac"
+#include "../../memset.mac"
+#include "../../strcpy.mac"
+#include "../../setdma.mac"
+#include "../../printl.mac"
+#include "../../puts.mac"
+#include "../../putc.mac"
+#include "../../display.mac"
+#include "../../startp.mac"
+#include "../../radix.mac"
+#include "../../mod.mac"
+#include "../../comp.mac"
+#include "../../divide.mac"
+#include "../../multip.mac"
+#include "../../binascii.mac"
+#include "../../snap.mac"
+#include "../../crlf.mac"
+#include "../../printerrno.mac"
+#include "../../strlen.mac"
+#include "../../strchar.mac"
+#include "../../getopt.mac"
+
+	common
+	org	100h
+	pre
+	; collect the command line startup text
+;	startp	front,list,count
+; make a ddt compatable program
+	jmp	next
+bcount	db	4-1
+count	db	4-1
+list	dw	a
+	dw	b
+	dw	c
+	dw	d
+
+a	db	'-Lxyzzy',0
+b	db	'-Ntest',0
+c	db	'-Efred',0
+d	db	'-Q',0
+next	equ	$
+	
+;
+; print out the command line flags
+;
+	lda	bcount
+	ora	a
+	jz	done
+
+	lda	count
+	sta	lcount
+ploop	lda	lcount	
+	lxi	h,list
+	rlc
+	mov	e,a
+	mvi	d,0
+	dad	d
+	mov	e,m
+	inx	h
+	mov	d,m
+	xchg
+	call	puts
+	crlf
+	lda	lcount
+	dcr	a
+	sta	lcount
+	jp	ploop	; sign goes neg.
+
+	; parse the text for flags
+	; warning, CP/M only passes upper case.
+startlp	getopt	count,list,'L:N:E'
+	cpi	'L'
+	jz	L
+	cpi	'N'
+	jz	N
+	cpi	'E'	
+	jz	E
+	cpi	-1
+	jz	done
+	cpi	0
+	jz	miss
+	jmp	startlp
+miss	wto	'Option not in list'
+	jmp	startlp
+;	jmp	done	
+L	equ	$
+	wto	'Process L flag'
+	jmp	startlp
+N	equ	$
+	wto	'Process N flag'
+	jmp	startlp
+E	equ	$
+	wto	'Process E flag'
+	jmp	startlp
+lcount	db	0
+done	equ	$
+	post
+	prestack
+	puts
+	end
