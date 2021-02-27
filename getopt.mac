@@ -80,9 +80,11 @@ a$sysin	lda	c$sysin	; get the count
 	xchg
 ;
 	mov	a,m	; should be a '-'
+	cpi	'.'	; a . is special case
+	jz	y$sysin
 	cpi	'-'
 	jnz	m$sysin ; error (force syntax)
-	inx	h	; now at the flag byte
+p$sysin	inx	h	; now at the flag byte
 	mov	a,m
 	inx	h	; now at the flag options
 ;
@@ -106,6 +108,7 @@ z$sysin	mov	b,a
 ; return the flag, and hl pointing to the
 ; option data
 ;
+y$sysin	push	h	; balance stack
 h$sysin	equ	$
 ; count the command we just found
 	lxi	h,c$sysin

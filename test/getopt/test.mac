@@ -38,21 +38,21 @@
 	org	100h
 	pre
 	; collect the command line startup text
-;	startp	front,list,count
+	startp	front,list,count
 ; make a ddt compatable program
-	jmp	next
-bcount	db	4-1
-count	db	4-1
-list	dw	a
-	dw	b
-	dw	c
-	dw	d
-
-a	db	'-Lxyzzy',0
-b	db	'-Ntest',0
-c	db	'-Efred',0
-d	db	'-Q',0
-next	equ	$
+;	jmp	next
+;bcount	db	4-1
+;count	db	4-1
+;list	dw	a
+;	dw	b
+;	dw	c
+;	dw	d
+;
+;a	db	'-Lxyzzy',0
+;b	db	'-Ntest',0
+;c	db	'-Efred',0
+;d	db	'-Q',0
+;next	equ	$
 	
 ;
 ; print out the command line flags

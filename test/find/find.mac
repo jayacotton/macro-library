@@ -38,6 +38,7 @@
 #include "../../printerrno.mac"
 #include "../../strlen.mac"
 #include "../../strchar.mac"
+#include "../../getopt.mac"
 
 
 	common
@@ -47,50 +48,69 @@
 ;
 ; handle start paramets
 ;
-	lxi	h,fifcb
-	packfd	'????????.???'
+	packfd	fifcb,'????????.???'
 	lda	count
 	ora	a
-	jz	skip
-; lets see if there is a complete file name in here.
-	lhld	list+2
-	xchg
-	strchar	,12,'.'
-; if de-> points to '.' then we assume this is a full
-; file name.
-	ldax	d	; get the byte
-	cpi	'.' 
-	jnz	skip1
-; o.k. its a file name
-	lhld	list+2
-	xchg
-	call	packfn
-	jmp	skip
-; clear out the name buffer (set to space)
-skip1	memset	filenm,32,11
-	lhld	list+2
-; find the string length of the input file extension
-	strlen
-; a = number of bytes in string
+	jm	skip
 ;
-	lhld	list+2
-	xchg
-	mov	b,a
-	lxi	h,filenm
-; copy the file extension string to filenm
-	call	strcpy	
-	lxi	d,filenm
-	lxi	h,fifcb+9
-	mvi	b,3
-	mvi	c,0
-	call	strcpy
+; use get opt to process option flags 
+; and setup the wild card file name and
+; wild card drive names.....
+; also handle all the listing options
+;
+startlp	getopt	count,list,'N:L:D'
+	cpi	'L'	; list to a file
+	jz	listf
+	cpi	'N'	; find a name
+	jz	namef
+	cpi	'D'	; look only on this drive
+	jz	drivf
+	cpi	'.'	; 
+	jz	dotf
+	cpi	-1	; errors
+	jz	skip
+	cpi	0	; option not found
+	jz	usage
+	jmp	startlp	; go to next option
+usage	wto	'-n[filename] -d[drive] -l[listfilename]'
+	jmp	done	
+dotf	equ	$
+	mvi	a,1
+	sta	flagdot
+	jmp	startlp
+listf	equ	$
+	mvi	a,1
+	sta	flagl
+; hl -> list file name
+;  make a file name to dump the list on
+	jmp	startlp
+namef	equ	$
+	mvi	a,1
+	sta	flagn	
+; hl -> file name
+	lxi	d,fifcb
+	call	packfn
+	snap	fifcb,22
+	jmp	startlp
+drivf	equ	$
+	mvi	a,1
+	sta	flagd
+; hl -> drive letter
+	mov	a,m
+	sbi	'A'
+	sta	drivlet	
+	jmp	startlp
+;
+; process drive select 
+;
 skip	mvi	a,0	; preset drive to a:
 	sta	curdriv
-	lhld	list
-	mov	a,m
-	cpi	'.'	; if parameter is . then scan all drives
-	jz	sknext
-	sbi	'A'	; else only one drive
+; see if the special case '.' was entered
+	lda	flagdot
+	ora	a ; if parameter is . then scan all drives
+	jnz	sknext
+;fixme need to resolve the drive number here
+	lda	drivlet	; get requested drive
 	sta	curdriv
 sknext	equ	$
 ;	snap	filenm,3
@@ -117,10 +137,9 @@ scanlp	equ	$
 ; if the drive search was a . search then all or a drive letter then we only
 ; search one drive, else all of them.
 ;
-	lhld	list	; get pointer to first parameter
-	mov	a,m
-	cpi	'.'
-	jz	scanlp
+	lda	flagdot
+	ora	a
+	jnz	scanlp
 	jmp	done	
 nxtdriv	lxi	h,curdriv
 	inr	m
@@ -158,8 +177,8 @@ prtname	equ	$
 ;
 	mvi	c,getcos
 	call	bdos
-	inr 	a
-	jz	done
+	ora	a
+	jnz	done
 ;
 	lxi	h,dskbuf  
 ;
@@ -186,16 +205,32 @@ prtname	equ	$
 prt1	push	b
 	mov	a,m
 	inx	h
+	push	psw
+	lda	flagl
+	cpi	0
+	jnz	flist
+	pop	psw
+; write to console
 	putc
-	pop	b
+	jmp	prt2
+; or write to disk file
+flist	equ	$
+	pop	psw
+; put character on disk file
+	wto	'FIXME need to fwrite here'
+prt2	pop	b
 	dcr	b
 	jnz	prt1	
+;
+; this needs work also
+;
 	crlf
 	ret
 done	equ	$
 	post
 	fmerr
 	strcpy
+	memset
 ;
 ; global storage
 ;
@@ -210,4 +245,9 @@ diskflg	db	0	; 0 = look on current drive only.
 fileflg	db	0	; 0 = find a file by name
 			; 1 = find files by wild card
 wild	ds	32	; storage for file name, or wild card key
+flagn	db	0
+flagl	db	0
+flagd	db	0
+drivlet db	0
+flagdot	db	0
 	end
