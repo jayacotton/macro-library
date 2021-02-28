@@ -12,9 +12,9 @@ For now, edit the BIOS address befor building and running.
 
 Here is a sample output from the code.
 
+```
 ZSDOS v1.1, 54.0K TPA
 
-```
 B>c:
 C>seltest
 1110110011100100
