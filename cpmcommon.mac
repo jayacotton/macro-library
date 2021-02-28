@@ -26,6 +26,7 @@ cfs	equ	35      ; compute file size
 ;
 fcb	equ	5ch	; location of file control block
 buff	equ	80h	; location of disk input buffer
+DEFAULT	equ	buff
 ;
 cr	equ	0dh
 lf	equ	0ah

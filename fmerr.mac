@@ -31,7 +31,7 @@ fmerr	equ	$
 	lxi	d,o$sysin
 	mvi	c,printf
 	call	bdos
-	jmp	0	; bad error no come back.
+	ret
 h$sysin	equ	$
 	cpi	10
 	jnc	p$sysin

@@ -8,6 +8,7 @@
 ;  find * -name string     Search all the drives for the file name 
 ;  
 #include "../../wto.mac"
+#include "../../fflush.mac"
 #include "../../pre.mac"
 #include "../../post.mac"
 #include "../../prestack.mac"
@@ -39,8 +40,10 @@
 #include "../../strlen.mac"
 #include "../../strchar.mac"
 #include "../../getopt.mac"
+#include "../../fputc.mac"
+#include "../../filecreat.mac"
 
-
+TRACE	equ	1
 	common
 	org	100h
 	pre
@@ -82,6 +85,17 @@ listf	equ	$
 	mvi	a,1
 	sta	flagl
 ; hl -> list file name
+	lxi	d,lifcb
+	call	packfn
+	create	lifcb
+	open	lifcb
+	memset	libuf,01ah,128
+	if	TRACE
+	wto	'list file'
+; trace code
+	lxi	h,lifcb
+	call	trace
+	endif
 ;  make a file name to dump the list on
 	jmp	startlp
 namef	equ	$
@@ -90,7 +104,12 @@ namef	equ	$
 ; hl -> file name
 	lxi	d,fifcb
 	call	packfn
-	snap	fifcb,22
+;	snap	fifcb,22
+	if	TRACE
+	wto	'file name'
+	lxi	h,fifcb
+	call	trace
+	endif
 	jmp	startlp
 drivf	equ	$
 	mvi	a,1
@@ -99,6 +118,9 @@ drivf	equ	$
 	mov	a,m
 	sbi	'A'
 	sta	drivlet	
+	if	TRACE
+	wto	'drive letter'
+	endif
 	jmp	startlp
 ;
 ; process drive select 
@@ -106,9 +128,9 @@ drivf	equ	$
 skip	mvi	a,0	; preset drive to a:
 	sta	curdriv
 ; see if the special case '.' was entered
-	lda	flagdot
-	ora	a ; if parameter is . then scan all drives
-	jnz	sknext
+	lda	flagd
+	cpi	0
+	jz	sknext
 ;fixme need to resolve the drive number here
 	lda	drivlet	; get requested drive
 	sta	curdriv
@@ -141,9 +163,16 @@ scanlp	equ	$
 	ora	a
 	jnz	scanlp
 	jmp	done	
-nxtdriv	lxi	h,curdriv
-	inr	m
-	ret
+nxtdriv	lda	curdriv
+	inr	a
+	sta	curdriv
+	cpi	10
+	jz	outaher
+	lda	flagd
+	cpi	0
+	rz
+outaher	pop	hl
+	jmp	done
 dorest	equ	$
 	lxi	d,fifcb
 	mvi	c,srchf
@@ -199,8 +228,18 @@ prtname	equ	$
 	inx	h
 	lda	curdriv
 	adi	'A'
+	push	psw
+	lda	flagl
+	cpi	0
+	jnz	wfile
+	pop	psw
 	putc
 	putc	':'
+	jmp	w1file
+wfile	pop	psw
+	fputc	lifcb,libuf,DEFAULT
+	fputc	lifcb,libuf,DEFAULT,':'
+w1file	equ	$
 	mvi	b,8+3
 prt1	push	b
 	mov	a,m
@@ -215,22 +254,50 @@ prt1	push	b
 	jmp	prt2
 ; or write to disk file
 flist	equ	$
+	fputc	lifcb,libuf,DEFAULT
 	pop	psw
 ; put character on disk file
-	wto	'FIXME need to fwrite here'
 prt2	pop	b
 	dcr	b
 	jnz	prt1	
 ;
 ; this needs work also
 ;
-	crlf
+	lda	flagl
+	cpi	0
+	jz	p2
+	fputc	lifcb,libuf,DEFAULT,0ah
+	fputc	lifcb,libuf,DEFAULT,0dh
+	ret
+p2	crlf
 	ret
 done	equ	$
+	lda	flagl
+	cpi	0
+	jz	d1one
+	if	TRACE
+	lxi	h,lifcb
+	call	trace
+	endif
+	fflush	lifcb,libuf,DEFAULT
+	if	TRACE
+	wto	'flushed, now close'
+	endif
+	close	lifcb
+d1one	equ	$
 	post
 	fmerr
 	strcpy
-	memset
+;	memset
+	if	TRACE
+trace	inx	h	
+trac1	mov	a,m
+	cpi	0
+	rz
+	putc
+	inx	h
+	jmp	trac1
+	endif
 ;
 ; global storage
 ;
@@ -239,6 +306,7 @@ filenm	ds	8+3	; space for constructing the file name
 drivcnt	dw	0	; store the drive count here.
 dskbuf	equ	80h
 fifcb	fcb
+lifcb	fcb
 curdriv	db	0
 diskflg	db	0	; 0 = look on current drive only.
 			; 1 = search all drives on the system.
@@ -250,4 +318,5 @@ flagl	db	0
 flagd	db	0
 drivlet db	0
 flagdot	db	0
+libuf	ds	128
 	end
