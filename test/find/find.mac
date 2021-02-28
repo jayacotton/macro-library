@@ -42,8 +42,9 @@
 #include "../../getopt.mac"
 #include "../../fputc.mac"
 #include "../../filecreat.mac"
+#include "../../filedelete.mac"
 
-TRACE	equ	1
+TRACE	equ	0
 	common
 	org	100h
 	pre
@@ -87,6 +88,7 @@ listf	equ	$
 ; hl -> list file name
 	lxi	d,lifcb
 	call	packfn
+	delete	lifcb
 	create	lifcb
 	open	lifcb
 	memset	libuf,01ah,128
