@@ -1,0 +1,99 @@
+;
+; fputc sets the dma address to a local data buffer,
+; on return it resets it to the default address.
+;
+; this is a very ugly thing, but CP/M only has 1 data 
+; buffer, and you can't read and write via only one.
+;
+; hl = fcb
+; de = buf
+; bc = def
+; a = char
+
+	macro	fputc
+%lab	fputc	%fcb,%buf,%def,%char
+	gblb	%fputc
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%char' eq '')&noreg
+	mvi	a,%char
+&noreg	anop
+	aif	('%fcb' eq '')&nohl
+	lxi	h,%fcb
+&nohl	anop
+	aif	('%buf' eq '')&node
+	lxi	d,%buf
+&node	anop
+	aif	('%def' eq '')&nobc
+	lxi	b,%def
+&nobc	anop
+	call	fputc
+	aif	(%fputc)&done
+%fputc	setb	1
+	jmp	x$sysin
+fputc	equ	$	
+;
+; to all the work here
+;
+;   store all the pointers.
+;
+	shld	f$sysin	; save fcb
+	xchg	
+	shld	b$sysin	; save working dma buffer
+	push	b
+	pop	h
+	shld	d$sysin	; save default dma buffer
+	push	psw	; and save the output byte
+;
+; setup the working dma buffer
+;
+	lhld	b$sysin
+	xchg
+	mvi	c,26
+	call	bdos
+;
+; get the work done here
+;
+	lhld	b$sysin	; get data buffer pointer
+	lda	c$sysin	; get buffer index
+	mov	e,a
+	mvi	d,0
+	dad	d	; hl now points to the storage
+			; location for the character
+	inr	a	; count this byte
+	sta	c%sysin	; and save for next time
+	pop	psw	; get back the byte
+	mov	m,a	; store the byte	
+; now decide if we need to flush the buffer to the disk file
+	lda	c%sysin
+	cpi	127
+	jc	s$sysin	; skip if count < 128 
+	jnz	s$sysin
+	mvi	a,0
+	sta	c$sysin	; set count to zero
+	lhld	f$sysin	; write the buffer to the disk
+	xchg
+	mvi	c,21
+	call	bdos
+;
+; return to the default dma buffer
+;
+s$sysin	lhld	d$sysin
+	xchg
+	mvi	c,26
+	call	bdos
+	lhld	b$sysin
+	mvi	b,128
+	mvi	a,01ah	
+	call	memset
+	ret
+f$sysin	dw	0	; fcb pointer
+b$sysin	dw	0	; buffer pointer
+c$sysin	db	0	; byte count for output pointer.
+			; note: this is a source of bugs.
+d$sysin	dw	0	; default pointer
+x$sysin	equ	$
+&done	anop
+	mend	
+
