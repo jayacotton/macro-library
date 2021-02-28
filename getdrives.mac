@@ -1,0 +1,13 @@
+;
+; get a list of drives.
+; on return HL has the drive list
+;  a: is lsb of L
+;  p: is msb of H
+; 
+;  1 is present, 0 is not present
+;
+	macro	getdrives	
+	getdrives 
+	mvi	c,getdriv
+	call	bdos
+	mend
