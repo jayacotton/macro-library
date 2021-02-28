@@ -14,7 +14,7 @@ Here is a sample output from the code.
 
 ZSDOS v1.1, 54.0K TPA
 
-....
+```
 B>c:
 C>seltest
 1110110011100100
@@ -33,4 +33,4 @@ C>seltest
 0
 0
 0
-....
+```
