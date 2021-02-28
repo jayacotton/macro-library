@@ -1,0 +1,56 @@
+#include "../../wto.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../prestack.mac"
+#include "../../cpmcommon.mac"
+#include "../../crlf.mac"
+#include "../../radix.mac"
+#include "../../mod.mac"
+#include "../../comp.mac"
+#include "../../divide.mac"
+#include "../../multip.mac"
+#include "../../binascii.mac"
+#include "../../printl.mac"
+#include "../../memset.mac"
+#include "../../pushall.mac"
+#include "../../popall.mac"
+
+
+
+magic	equ	0e600h
+seldskf	equ	magic +(3*9)
+	common
+	org	100h
+	pre
+	mvi	a,0
+	sta	index
+; for i = 0 ; i < 16; i++
+floop	lda	index
+;	mvi	c,11	; drive k
+	mov	c,a
+	inr	a
+	sta	index
+	call	seldskf
+        lxi     d,2     ; display in binary
+        radix
+        pushall
+        memset	bigbuf,0,25
+        popall
+        binasci	s,bigbuf,,16
+        printl	bigbuf
+        crlf
+	lda	index
+	cpi	16
+	jz	done
+	jmp	floop
+done	equ	$
+        post
+        prestack
+        mod
+        comp
+        mul
+        div
+bigbuf  ds      25
+index	db	0
+        end
+
