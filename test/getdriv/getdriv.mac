@@ -1,0 +1,39 @@
+#include "../../getdrives.mac"
+#include "../../wto.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../prestack.mac"
+#include "../../cpmcommon.mac"
+#include "../../crlf.mac"
+#include "../../radix.mac"
+#include "../../mod.mac"
+#include "../../comp.mac"
+#include "../../divide.mac"
+#include "../../multip.mac"
+#include "../../binascii.mac"
+#include "../../printl.mac"
+#include "../../memset.mac"
+#include "../../pushall.mac"
+#include "../../popall.mac"
+
+        common
+        org     100h
+        pre
+	getdrives
+; hl = drive list
+	lxi	d,2	; display in binary
+	radix
+	pushall
+	memset	bigbuf,0,25
+	popall
+	binasci	s,bigbuf,,16
+	printl	bigbuf
+	crlf
+	post
+	prestack
+	mod
+	comp
+	mul
+	div
+bigbuf	ds	25
+	end
