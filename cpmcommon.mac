@@ -9,6 +9,7 @@ reset   equ     0       ; jump here to reset
 consi   equ     1       ; read console
 conso   equ     2       ; type function
 getcos	equ	11	; get console status
+getver	equ	12	; get cp/m version
 seldisk equ     14      ; select disk
 openf   equ     15      ; file open
 closef  equ     16      ; close file
@@ -25,6 +26,7 @@ setdma	equ	26	; set disk i/o buffer address
 readran equ     33      ; read random record
 writran equ     34      ; write random record
 cfs	equ	35      ; compute file size
+cfgtbl	equ	69	; return the config table
 ;
 fcb	equ	5ch	; location of file control block
 buff	equ	80h	; location of disk input buffer
