@@ -1,0 +1,8 @@
+;
+;
+	macro	seldisk
+	seldisk
+	mvi	c,seldisk
+	mov	e,a
+	call	bdos
+	mend

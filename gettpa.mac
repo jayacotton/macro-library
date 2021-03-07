@@ -1,0 +1,17 @@
+	macro	gettpa
+%lab	gettpa	%addr
+	gblb	%gettpa
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; extract the BIOS address from the
+; jmp address at location 0
+;
+	lda	1	; get low half of address	
+	ani	0f0h
+	mov	l,a	; into l
+	lda	2	; and high half of address
+	mov	h,a	; into h
+	shld	%addr	; store BIOS address
+	mend

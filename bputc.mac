@@ -1,0 +1,66 @@
+;
+; fputc sets the dma address to a local data buffer,
+; on return it resets it to the default address.
+;
+; this is a very ugly thing, but CP/M only has 1 data 
+; buffer, and you can't read and write via only one.
+;
+; hl = current buffer pointer (updated here) 
+; de = end of ram pointer
+
+	macro	bputc
+%lab	bputc	%curpnt,%endofram,%char
+	gblb	%bputc
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%char' eq '')&noreg
+	mvi	a,%char
+&noreg	anop
+	aif	('%curpnt' eq '')&nohl
+	lhld	%curpnt
+&nohl	anop
+	aif	('%endofram' eq '')&node
+	push	h
+	lhld	%endofram
+	xchg
+	pop	h
+	call	bputc
+&node	anop
+	aif	(%bputc)&done
+%bputc	setb	1
+	jmp	x$sysin
+bputc	equ	$	
+;
+; to all the work here
+;
+	shld	p$sysin	; save the current data pointer
+	xchg
+	shld	e$sysin	; and the EOM pointer
+	sta	b$sysin	; save our byte
+; check to see if we are too close to the end of ram
+	call	u$sysin
+	rz		; Out of space
+; now store the byte
+	lhld	p$sysin
+	lda	b$sysin
+	mov	m,a	; store the byte
+	inx	h
+	shld	p$sysin	; data pointer updated
+	shld	%curpnt
+	ret
+; compair hl == de 
+; nz means no, z = yes
+u$sysin	mov     a,l
+        cmp     e
+        rnz
+        mov     a,h
+        cmp     d
+        ret
+p$sysin	dw	0
+e$sysin	dw	0
+b$sysin	db	0
+x$sysin	equ	$
+&done	anop
+	mend	
+
