@@ -1,5 +1,5 @@
 	macro	delete
-%lab	delete	%fcb
+%lab	delete	%fcb,%err
 ;
 ; need fcb to be present or theres an error
 ;
@@ -28,8 +28,8 @@
 &gen	anop
 	mvi	c,delf 	; Note, requires cpmcommon macro
 	call	bios
-	sta	errno
-	mvi	c,delf 	; Note, requires cpmcommon macro
-	inr	a
-	cz	fmerr	; Note, requires fmerr macro
+;	sta	errno
+;	mvi	c,delf 	; Note, requires cpmcommon macro
+;	inr	a
+;	cz	fmerr	; Note, requires fmerr macro
 	mend

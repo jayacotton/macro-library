@@ -8,6 +8,8 @@
 ;  find * -name string     Search all the drives for the file name 
 ;  
 #include "../../wto.mac"
+#include "../../dreg.mac"
+#include "../../seldrive.mac"
 #include "../../fflush.mac"
 #include "../../pre.mac"
 #include "../../post.mac"
@@ -43,15 +45,75 @@
 #include "../../fputc.mac"
 #include "../../filecreat.mac"
 #include "../../filedelete.mac"
+#include "../../getcurent.mac"
+#include "../../seldisk.mac"
+#include "../../gettpa.mac"
+#include "../../bputc.mac"
+#include "../../bflush.mac"
+#include "../../pushall.mac"
+#include "../../popall.mac"
 
-TRACE	equ	0
 	common
 	org	100h
 	pre
 	startp	front,list,count
 ;
+; get the default drive number
+;
+	getcurent
+	sta	default
+;
+; get end address of TPA
+;
+	gettpa	fbase
+;
+; flood memory with 1a's
+;
+	lxi	d,0c000h
+	lxi	h,pend	; point to the end of the program
+l123	inx	h
+	mvi	m,1ah	; stuff in an eof
+	push	h
+	push	d
+	call	usgt	; is HL > DE 
+	pop	d
+	pop	h
+	jnc	l123	; NC - NO
+;
 ; handle start paramets
 ;
+	mvi	a,0	; start at drive a
+	sta	index	; preload index
+stloop	mov	c,a	; copy drive nr
+	seldriv
+; if hl = 0 then no drive there
+	mov	a,h	; get H to a
+	ora	l	; or the bits
+;
+; IF zero and the total number of drives is 
+; not 16, then keep going.
+;
+	jz 	next	; are there any ones
+	lxi	h,drivlst ; drive list string pointer
+	lda	index	; get the index
+	mov	e,a	; and create a pointer to the string
+	mvi	d,0
+	dad	d
+	adi	'A'	; Make it ASCII
+	mov	m,a	; Save it
+next	lda	index
+	inr	a
+	sta	index 
+	cpi	16
+	jnz	stloop	; any more to do ?
+;
+; return the system to the default drive, i.e. the
+; active one when we started the find command.
+;
+	lda	default
+	seldisk
+
+; make a dummy file name string.
 	packfd	fifcb,'????????.???'
 	lda	count
 	ora	a
@@ -88,16 +150,26 @@ listf	equ	$
 ; hl -> list file name
 	lxi	d,lifcb
 	call	packfn
+	lda	default
+	sta	lifcb
+; set drive to default drive
+	lda	default
+	inr	a	; test
+	seldisk
+;
+	lda	default
+	inr	a
+	sta	lifcb
 	delete	lifcb
+	lda	default
+	inr	a
+	sta	lifcb
 	create	lifcb
+	lda	default
+	inr	a
+	sta	lifcb
 	open	lifcb
 	memset	libuf,01ah,128
-	if	TRACE
-	wto	'list file'
-; trace code
-	lxi	h,lifcb
-	call	trace
-	endif
 ;  make a file name to dump the list on
 	jmp	startlp
 namef	equ	$
@@ -106,12 +178,6 @@ namef	equ	$
 ; hl -> file name
 	lxi	d,fifcb
 	call	packfn
-;	snap	fifcb,22
-	if	TRACE
-	wto	'file name'
-	lxi	h,fifcb
-	call	trace
-	endif
 	jmp	startlp
 drivf	equ	$
 	mvi	a,1
@@ -119,40 +185,34 @@ drivf	equ	$
 ; hl -> drive letter
 	mov	a,m
 	sbi	'A'
+	;dcr	a
 	sta	drivlet	
-	if	TRACE
-	wto	'drive letter'
-	endif
+	sta	index
 	jmp	startlp
 ;
 ; process drive select 
 ;
 skip	mvi	a,0	; preset drive to a:
 	sta	curdriv
+	sta	index
 ; see if the special case '.' was entered
 	lda	flagd
 	cpi	0
 	jz	sknext
 ;fixme need to resolve the drive number here
 	lda	drivlet	; get requested drive
+	sta	index
 	sta	curdriv
 sknext	equ	$
-;	snap	filenm,3
-;	snap	fifcb,22
-;
-; figure out how many drives are mounted
-;
 ;
 scanlp	equ	$
 ;
 ; select drive
 ;
 	lxi	h,fifcb
-	lda	curdriv
+	lda	index	
 	mov	m,a
-	mvi	c,0eh
-	mov	e,a
-	call	bdos
+	seldisk
 	call	dorest
 	call	nxtdriv
 ;
@@ -165,39 +225,62 @@ scanlp	equ	$
 	ora	a
 	jnz	scanlp
 	jmp	done	
-nxtdriv	lda	curdriv
-	inr	a
+;
+; index is inited to 0 or set to the drive letter 
+; we want to search.  The dummy up stairs sets the
+; drive value to what was given... fix that.
+;
+nxtdriv	lda	index		; using index to access drive list
+	inr	a		; up to next drive
+	sta	index		; and save it
+	cpi	16		; off the end ?
+	jz	outaher		; bail out
+	lxi	h,drivlst	; get the drive table
+	mov	e,a
+	mvi	d,0
+	dad	d
+	mov	a,m		; pick up the drive letter
+	cpi	'.'		; is there a drive there ?
+	jz	nxtdriv		; loop back to pick up next drive
+	cpi	0
+	jz	nxtdriv		; did we run off the end ?
+	sbi	'A'		; make it binary
 	sta	curdriv
-	cpi	10
-	jz	outaher
+; SO, if we gave the -d option, then index was set to the
+; binary drive value to be searched.  And only that drive
 	lda	flagd
 	cpi	0
 	rz
-outaher	pop	hl
-	jmp	done
+outaher	pop	hl	; blow off the return address
+	jmp	done	; and bail out
+;
+; search for the first directory entry
+;
 dorest	equ	$
-	lxi	d,fifcb
-	mvi	c,srchf
+	lxi	d,fifcb	; fcb 
+	mvi	c,srchf	; search first
 	call	bdos
 	sta	errno
+	sta	rcode	; rcode is the index
 	inr	a
-	rz
-	call	prtname
+	rz		; end of list ?
+	call	prtname	; print
 ;
 ; loop through the next entries
 ;
-loop	lxi	d,fifcb
-	mvi	c,srchn
+loop	lxi	d,fifcb ; fcb
+	mvi	c,srchn	; search next
 	call	bdos
 	sta	errno
+	sta	rcode	; index
 	inr	a
 	rz
-	call	prtname
+	call	prtname	; print
 	jmp	loop
 ;
 ; print file name in fcb 
 ;
-; errno has the value return from find first and next 
+; rcode has the value return from find first and next 
 ; directory entry.
 ; this is an index into the dskbuffer where the file name is
 ; located.  there can be up to 4 records in the buffer.
@@ -206,16 +289,16 @@ prtname	equ	$
 ;
 ; if console active, quit
 ;
-	mvi	c,getcos
+	mvi	c,getcos	; check console
 	call	bdos
-	ora	a
+	ora	a		; anything ?
 	jnz	done
 ;
 	lxi	h,dskbuf  
 ;
-; errno has the index
+; rcode has the index
 ;
-	lda	errno
+	lda	rcode	
 	ani	3
 ; multiply by 32 (size of entry in buffer)
 	rlc
@@ -227,88 +310,88 @@ prtname	equ	$
 	mov	e,a
 ; and bump up to the string
 	dad	d
-	inx	h
-	lda	curdriv
+	inx	h	; hl has pointer to name string.
+	lda	index	
 	adi	'A'
-	push	psw
+	push	psw	; save drive letter on stack
 	lda	flagl
 	cpi	0
 	jnz	wfile
-	pop	psw
+; break these up into 2 functions
+
+;
+; write on the console
+;
+wcon	pop	psw	; get the drive letter
+; write drive letter string
 	putc
 	putc	':'
-	jmp	w1file
-wfile	pop	psw
-	fputc	lifcb,libuf,DEFAULT
-	fputc	lifcb,libuf,DEFAULT,':'
-w1file	equ	$
+; set up the counter
 	mvi	b,8+3
-prt1	push	b
-	mov	a,m
-	inx	h
-	push	psw
-	lda	flagl
-	cpi	0
-	jnz	flist
-	pop	psw
-; write to console
+wcon1	mov	a,m	; get a byte
+	inx	h	; bump index
 	putc
-	jmp	prt2
-; or write to disk file
-flist	equ	$
-	fputc	lifcb,libuf,DEFAULT
-	pop	psw
-; put character on disk file
-prt2	pop	b
-	dcr	b
-	jnz	prt1	
-;
-; this needs work also
-;
-	lda	flagl
-	cpi	0
-	jz	p2
-	fputc	lifcb,libuf,DEFAULT,0ah
-	fputc	lifcb,libuf,DEFAULT,0dh
+	dcr	b	; count the byte
+	jnz	wcon1	; loop till done
+	crlf
 	ret
-p2	crlf
+;
+; write on the disk file
+;
+wfile	equ	$
+	pop	psw	; get the drive letter
+	push	h	; save hl (bputc eats all registers)
+; write the drive letter 
+	bputc	lcurt,fbase	
+	bputc	lcurt,fbase,':'
+	pop	h	; get back hl
+	mvi	b,8+3	; b is a counter
+wfile1	mov	a,m	; get a byte
+	inx	h	; bump index
+	push	h	; save hl - fputc eats all
+	push	b	; save bc my counter
+; write the file name
+	bputc	lcurt,fbase	
+	pop	b	; get back the counter	
+	pop	h	; and hl
+	dcr	b	; count the character
+	jnz	wfile1	
+; put in a cr,lf... may need to change this
+	bputc	lcurt,fbase,0ah
+	bputc	lcurt,fbase,0dh
 	ret
 done	equ	$
 	lda	flagl
 	cpi	0
 	jz	d1one
-	if	TRACE
-	lxi	h,lifcb
-	call	trace
-	endif
-	fflush	lifcb,libuf,DEFAULT
-	if	TRACE
-	wto	'flushed, now close'
-	endif
+	lda	default
+	inr	a
+	seldisk
+	bflush	lifcb,pend,lcurt
 	close	lifcb
 d1one	equ	$
 	post
 	fmerr
 	strcpy
+	comp
+	mod
+	div
+	mul
 ;	memset
-	if	TRACE
-trace	inx	h	
-trac1	mov	a,m
-	cpi	0
-	rz
-	putc
-	inx	h
-	jmp	trac1
-	endif
 ;
 ; global storage
 ;
 	prestack
+drivlst	db	'................',0
+index	db	0
+default	db	0
 filenm	ds	8+3	; space for constructing the file name
 drivcnt	dw	0	; store the drive count here.
 dskbuf	equ	80h
 fifcb	fcb
+	ds	24	; guard space ?????
 lifcb	fcb
+	ds	24	; guard space ?????
 curdriv	db	0
 diskflg	db	0	; 0 = look on current drive only.
 			; 1 = search all drives on the system.
@@ -320,5 +403,10 @@ flagl	db	0
 flagd	db	0
 drivlet db	0
 flagdot	db	0
+rcode	db	0
+fbase	dw	0	; practical end of tpa
+lcurt	dw	pend	; current address of buffer pointer
 libuf	ds	128
+bigbuf	ds	128
+pend	equ	$	; start of buffer
 	end

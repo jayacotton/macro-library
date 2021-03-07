@@ -48,16 +48,16 @@ SPACE	equ	20h
 	; parameters, given at the command line.
 	; NOTICE:  Omit the drive letter, it will be set to zero until
 	; the input file name is processed.
-	packfd	'TESTFILE.TXT'
+	packfd	rdfcb,'TESTFILE.TXT'
 	; use packfn to replace the dummy file name.
 	; hl still points to rdfcb
-	memset	filenm,0,16
-	strcpy	filenm,argb,16,0
-	memset	rdfcb,0,fcbsz
-	lhld	list
-	xchg
-; put in the file name and drive the user specified
+;	memset	filenm,0,16
+;	strcpy	filenm,argb,16,0
+;	memset	rdfcb,0,fcbsz
 	lxi	h,rdfcb
+	xchg
+	lhld	list
+; put in the file name and drive the user specified
 	call	packfn	
 ; set up the dma buffer
 ; open the file
@@ -81,6 +81,8 @@ loop	fread	rdfcb
 ; scan the record
 	lxi	h,dskbuf
 iloop	mov	a,m
+	cpi	1ah	; eof character
+	jz	finish
 	cpi	NEWLN
 	cz	cntln
 	cpi	SPACE
@@ -133,6 +135,7 @@ finish	equ	$
 	div
 	comp
 	mod
+	strcpy
 dolots	equ	$
 	push	h
 	memset	dskbuf,0,32

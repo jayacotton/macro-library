@@ -20,6 +20,7 @@ writef  equ     21      ; write sequencial
 creatf  equ     22      ; creat file
 renf    equ     23      ; rename file
 getdriv	equ	24	; get a list of log-in drives....
+getcur	equ	25	; get the current driver number
 setdma	equ	26	; set disk i/o buffer address
 readran equ     33      ; read random record
 writran equ     34      ; write random record

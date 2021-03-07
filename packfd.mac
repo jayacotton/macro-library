@@ -22,22 +22,22 @@ e$sysin	db	%string
 c$sysin	equ	$
 	aif	(%packfd)&done
 %packfd	setb	1
-	jmp	g$sysin
+	jmp	g$sysin	; jump over the code
 packfn	equ	$
-	shld	s$sysin
+	shld	s$sysin	; file name
 	xchg
-	shld	f$sysin
-	mvi	b,33
+	shld	f$sysin	; fcb
+	mvi	b,33	; size of fcb
 	mvi	a,0
-	call	memset
+	call	memset	; clear it out
 p$sysin	mvi	a,0
 	sta	o$sysin ;o$sysin=0;
-	lxi	h,n$sysin
+	lxi	h,n$sysin  ; working space
 	mvi	b,12
-	mvi	a,' '
+	mvi	a,' '	; flood it with spaces
 	call	memset ;memset(n$sysin,' ',12);
 a$sysin	equ	$
-	lhld	s$sysin
+	lhld	s$sysin	; get file name
 	mov	a,m
 	cpi	0
 	jz	d$sysin	;while(*s$sysin){

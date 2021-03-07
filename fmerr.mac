@@ -4,7 +4,12 @@
 	aif	(%fmerr)&done
 %fmerr	setb	1
 	jmp	x$sysin
+;
+; print out the error code value
+;
 fmerr	equ	$
+	mov	a,c
+	sta	m$sysin
 	lda	errno
 	rrc
 	rrc
@@ -15,19 +20,29 @@ fmerr	equ	$
 	lda	errno
 	ani	0fh
 	call	h$sysin	
-	mov	a,c
+	lda	m$sysin
+; open err
 	cpi	openf
 	jz	opener
+;close err
 	cpi	closef
 	jz	closeer
+; search err
 	cpi	srchf
 	jz	opener
+; write err
 	cpi	writef
 	jz	noroer
+; create err
 	cpi	creatf
 	jz	noroer
+; delete err
 	cpi	delf
 	jz	deleter
+;
+; we don't know what the error code
+; is.
+;
 	lxi	d,o$sysin
 	mvi	c,printf
 	call	bdos
@@ -42,6 +57,7 @@ i$sysin	mov	e,a
 	mvi	c,2
 	call	bdos
 	ret
+m$sysin	db	0
 o$sysin	db	' Unknown i/o error'
 	db	cr,lf
 	db	'$'

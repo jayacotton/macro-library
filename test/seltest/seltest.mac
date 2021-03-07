@@ -14,6 +14,7 @@
 #include "../../memset.mac"
 #include "../../pushall.mac"
 #include "../../popall.mac"
+#include "../../seldrive.mac"
 
 
 
@@ -30,7 +31,8 @@ floop	lda	index
 	mov	c,a
 	inr	a
 	sta	index
-	call	seldskf
+	seldriv
+	shld	stat
         lxi     d,2     ; display in binary
         radix
         pushall
@@ -39,11 +41,26 @@ floop	lda	index
         binasci	s,bigbuf,,16
         printl	bigbuf
         crlf
+	lhld	stat
+	mov	a,h
+	ora	l
+	jz	next
 	lda	index
+	dcr	a
+	mov	e,a
+	mvi	d,0
+	lxi	h,drivlst
+	dad	d
+	adi	'A'
+	mov	m,a	
+next	lda	index
 	cpi	16
 	jz	done
 	jmp	floop
 done	equ	$
+	lxi	d,drivlst
+	mvi	c,printf
+	call	bdos
         post
         prestack
         mod
@@ -52,5 +69,7 @@ done	equ	$
         div
 bigbuf  ds      25
 index	db	0
+stat	dw	0
+drivlst	db	'................',cr,lf,'$'	
         end
 

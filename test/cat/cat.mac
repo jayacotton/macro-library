@@ -35,24 +35,21 @@ SPACE	equ	20h
 	; create a dummy file name and use packfd to fill in the
 	; fcb.  then read the intended name from the start up
 	; parameters, given at the command line.
-	packfd	'TESTFILE.TXT'
+	packfd	rdfcb,'TESTFILE.TXT'
 	; use packfn to replace the dummy file name.
 	; hl still points to rdfcb
-	memset	filenm,0,16
-	strcpy	filenm,argb,16,0
-	memset	rdfcb,0,fcbsz
-	lhld	list
-	xchg
+;	memset	filenm,0,16
+;	strcpy	filenm,argb,16,0
+;	memset	rdfcb,0,fcbsz
 	lxi	h,rdfcb
+	xchg
+	lhld	list
+	;lxi	h,;name
 ; put in the file name and drive the user specified
 	call	packfn	
 	lxi	h,rdfcb
 ; open the file
 	open	hl
-; set up the dma buffer
-;	setdma	dskbuf
-; get to record 1
-;	fseek	1
 ; read a record
 loop	fread	rdfcb	
 	ora	a
@@ -65,6 +62,8 @@ loop	fread	rdfcb
 ;}
 	lxi	h,dskbuf
 iloop	mov	a,m
+	cpi	1ah
+	jz	finish
 	inx	h
 	; need to check the character here
 	; put a character on the console.
@@ -87,8 +86,11 @@ finish	equ	$
 	close	rdfcb	
 	post
 	fmerr
+	strcpy
+	memset
 	prestack
 rdfcb	fcb
+;name	db	'a.txt',0
 dskbuf	equ	80h	
 filenm	ds	16
 rcnt	ds	1

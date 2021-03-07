@@ -11,7 +11,7 @@
 ; a = char
 
 	macro	fputc
-%lab	fputc	%fcb,%buf,%def,%char
+%lab	fputc	%fcb,%buf,%def,%ddrive,%char
 	gblb	%fputc
 	aif	('%lab' eq '')&nolab
 %lab	equ	$
@@ -28,6 +28,8 @@
 	aif	('%def' eq '')&nobc
 	lxi	b,%def
 &nobc	anop
+	push	psw
+	lda	%ddrive
 	call	fputc
 	aif	(%fputc)&done
 %fputc	setb	1
@@ -38,61 +40,85 @@ fputc	equ	$
 ;
 ;   store all the pointers.
 ;
+	sta	m$sysin
 	shld	f$sysin	; save fcb
+; rebalance stack
+	pop	hl	; return address
+	pop	psw
+	push	hl	; return address
+	sta	a$sysin
 	xchg	
 	shld	b$sysin	; save working dma buffer
 	push	b
 	pop	h
 	shld	d$sysin	; save default dma buffer
-	push	psw	; and save the output byte
-;
-; setup the working dma buffer
-;
-	lhld	b$sysin
-	xchg
+; Start work here
+;	 buff[index] = a;
+	lhld	b$sysin ; get buff addr
+	lda	c$sysin	; get index
+	mov	e,a	; compute index to store byte
+	mvi	d,0
+	dad	d
+	lda	a$sysin
+	mov	m,a	; stuff it in memory
+;        index++;
+	lda	c$sysin
+	inr	a
+	sta	c$sysin
+;        if(index >127) {
+	cpi	128	; max buff ?
+	rnz	
+; get the current drive
+	mvi	c,25
+	call	bdos
+	sta	n$sysin
+; set to default drive
+	lda	m$sysin
+	mvi	c,14
+	mov	e,a
+	call	bdos
+;                setdma to buff;
+	lhld	b$sysin 
+	xchg		; new dma buffer to de.
 	mvi	c,26
 	call	bdos
-;
-; get the work done here
-;
-	lhld	b$sysin	; get data buffer pointer
-	lda	c$sysin	; get buffer index
-	mov	e,a
-	mvi	d,0
-	dad	d	; hl now points to the storage
-			; location for the character
-	inr	a	; count this byte
-	sta	c%sysin	; and save for next time
-	pop	psw	; get back the byte
-	mov	m,a	; store the byte	
-; now decide if we need to flush the buffer to the disk file
-	lda	c%sysin
-	cpi	127
-	jc	s$sysin	; skip if count < 128 
-	jnz	s$sysin
-	mvi	a,0
-	sta	c$sysin	; set count to zero
-	lhld	f$sysin	; write the buffer to the disk
+;                write buffer to disk
+	lhld	f$sysin
 	xchg
 	mvi	c,21
 	call	bdos
-;
-; return to the default dma buffer
-;
-s$sysin	lhld	d$sysin
+	sta	errno
+	mvi	c,21
+	inr	a
+	cz	fmerr
+;                memset buffer to 1Ah
+	lhld	b$sysin
+	mvi	a,01ah
+	mvi	b,128
+	call	memset
+;                index = 0;
+	mvi	a,0
+	sta	c$sysin
+;                setdma to default;
+	lhld	d$sysin
 	xchg
 	mvi	c,26
 	call	bdos
-	lhld	b$sysin
-	mvi	b,128
-	mvi	a,01ah	
-	call	memset
+; set back to current drive
+	lda	n$sysin
+	mvi	c,14
+	mov	e,a
+	call	bdos
+;        }
 	ret
+a$sysin	db	0	; character storage
 f$sysin	dw	0	; fcb pointer
 b$sysin	dw	0	; buffer pointer
 c$sysin	db	0	; byte count for output pointer.
 			; note: this is a source of bugs.
 d$sysin	dw	0	; default pointer
+m$sysin	db	0	; my drive (where the file is)
+n$sysin	db	0	; current drive.
 x$sysin	equ	$
 &done	anop
 	mend	
