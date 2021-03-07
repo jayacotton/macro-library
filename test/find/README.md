@@ -36,3 +36,11 @@ I:URATFOR FOR
 J:RATFOR  FOR
 J:URATFOR FOR
 ```
+The original reason the creating these programs was to figure out how many files I have on 
+my CP/M machine.
+```
+C>find . -la.txt
+
+C>wc a.txt
+14208 2943 944
+``
