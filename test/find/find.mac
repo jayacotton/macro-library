@@ -80,9 +80,70 @@ l123	inx	h
 	pop	h
 	jnc	l123	; NC - NO
 ;
-; handle start paramets
+; dredg through the system code and find all the known drives
 ;
-	mvi	a,0	; start at drive a
+	; Are we running CP/Net ?
+; This is the network config table 
+;Initconfigtbl:
+; db 0000$0000b ; network status byte
+; db slave$ID ; slave processor ID number
+; db 84h,0 ; A: Disk device
+; db 81h,0 ; B: "
+; db 82h,0 ; C: "
+; db 83h,0 ; D: "
+; db 80h,0 ; E: "
+; db 85h,0 ; F: "
+; db 86h,0 ; G: "
+; db 87h,0 ; H: "
+; db 88h,0 ; I: "
+; db 89h,0 ; J: "
+; db 8ah,0 ; K: "
+; db 8bh,0 ; L: "
+; db 8ch,0 ; M: "
+; db 8dh,0 ; N: "
+; db 8eh,0 ; O: "
+; db 8fh,0 ; P: "
+; db 0,0 ; console device
+; db 0,0 ; list device:
+; db 0 ; buffer index
+; db 0 ; FMT
+; db 0 ; DID
+; db slave$ID ; SID
+; db 5 ; FNC
+	mvi	a,0
+	sta	index
+	mvi	c,getver
+	call	bdos
+	mov	a,h
+	ani	2
+	jz	nocpnt
+; Get the network table
+	mvi	c,cfgtbl
+	call	bdos
+	shld	netcfg
+	mvi	b,16
+ntloop	inx	h
+	inx	h	
+	mov	a,m	; start at drive a
+; we don't care if the drive is local or network, but just that
+; its there.
+	cpi	0	; assumes null means not preset	
+	jz	ntskip
+	push	h
+	lxi	h,drivlst ; populate the drivelist 
+	mov	e,b  	; build offset from index
+	mvi	d,0
+	dad 	d
+	mov	a,b
+	adi	'A'	; make it ascii
+	mov	m,a
+	pop	h
+; djnz ntloop
+ntskip	db	10h
+	dw	ntloop
+	jmp	gohere
+	; we are not running CP/Net
+nocpnt	mvi	a,0	; start at drive a
 	sta	index	; preload index
 stloop	mov	c,a	; copy drive nr
 	seldriv
@@ -110,7 +171,7 @@ next	lda	index
 ; return the system to the default drive, i.e. the
 ; active one when we started the find command.
 ;
-	lda	default
+gohere	lda	default
 	seldisk
 
 ; make a dummy file name string.
@@ -124,13 +185,15 @@ next	lda	index
 ; wild card drive names.....
 ; also handle all the listing options
 ;
-startlp	getopt	count,list,'N:L:D'
+startlp	getopt	count,list,'N:L:D:U'
 	cpi	'L'	; list to a file
 	jz	listf
 	cpi	'N'	; find a name
 	jz	namef
 	cpi	'D'	; look only on this drive
 	jz	drivf
+	cpi	'U'	; get user number
+	jz	userf
 	cpi	'.'	; 
 	jz	dotf
 	cpi	-1	; errors
@@ -138,7 +201,7 @@ startlp	getopt	count,list,'N:L:D'
 	cpi	0	; option not found
 	jz	usage
 	jmp	startlp	; go to next option
-usage	wto	'-n[filename] -d[drive] -l[listfilename]'
+usage	wto	'-n[filename] -d[drive] -l[listfilename] -u[user number]'
 	jmp	done	
 dotf	equ	$
 	mvi	a,1
@@ -188,6 +251,13 @@ drivf	equ	$
 	;dcr	a
 	sta	drivlet	
 	sta	index
+	jmp	startlp
+userf	equ	$
+	mvi	a,1
+	sta	flagu
+; hl -> user number (ascii string)
+; range 0 to 15
+
 	jmp	startlp
 ;
 ; process drive select 
@@ -382,6 +452,7 @@ d1one	equ	$
 ; global storage
 ;
 	prestack
+netcfg	dw	0
 drivlst	db	'................',0
 index	db	0
 default	db	0
@@ -401,6 +472,8 @@ wild	ds	32	; storage for file name, or wild card key
 flagn	db	0
 flagl	db	0
 flagd	db	0
+flagu	db	0
+usernr	db	0
 drivlet db	0
 flagdot	db	0
 rcode	db	0
