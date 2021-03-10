@@ -56,6 +56,9 @@
 	common
 	org	100h
 	pre
+	lxi	h,80h
+	mvi	c,128
+	snap
 	startp	front,list,count
 ;
 ; get the default drive number
@@ -69,7 +72,7 @@
 ;
 ; flood memory with 1a's
 ;
-	lxi	d,0c000h
+	lxi	d,08000h
 	lxi	h,pend	; point to the end of the program
 l123	inx	h
 	mvi	m,1ah	; stuff in an eof
@@ -114,6 +117,7 @@ l123	inx	h
 	sta	index
 	mvi	c,getver
 	call	bdos
+	shld	version
 	mov	a,h
 	ani	2
 	jz	nocpnt
@@ -134,18 +138,24 @@ ntloop	inx	h
 	mov	e,b  	; build offset from index
 	mvi	d,0
 	dad 	d
-	mov	a,b
+	lda	index
 	adi	'A'	; make it ascii
 	mov	m,a
 	pop	h
-; djnz ntloop
-ntskip	db	10h
-	dw	ntloop
-	jmp	gohere
+ntskip	lda	index
+	inr	a
+	sta	index
+	dcr	b
+	jnz	ntloop	
 	; we are not running CP/Net
 nocpnt	mvi	a,0	; start at drive a
 	sta	index	; preload index
 stloop	mov	c,a	; copy drive nr
+; this code may not work on cp/m 3
+	lhld	version
+	mov	a,l
+	cpi	31h
+	jz	nextl
 	seldriv
 ; if hl = 0 then no drive there
 	mov	a,h	; get H to a
@@ -155,7 +165,7 @@ stloop	mov	c,a	; copy drive nr
 ; not 16, then keep going.
 ;
 	jz 	next	; are there any ones
-	lxi	h,drivlst ; drive list string pointer
+nextl	lxi	h,drivlst ; drive list string pointer
 	lda	index	; get the index
 	mov	e,a	; and create a pointer to the string
 	mvi	d,0
@@ -477,6 +487,7 @@ usernr	db	0
 drivlet db	0
 flagdot	db	0
 rcode	db	0
+version	dw	0
 fbase	dw	0	; practical end of tpa
 lcurt	dw	pend	; current address of buffer pointer
 libuf	ds	128
