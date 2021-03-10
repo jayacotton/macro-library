@@ -56,9 +56,24 @@
 	common
 	org	100h
 	pre
-	lxi	h,80h
-	mvi	c,128
-	snap
+; 
+; get the version of cpm we are running on
+;
+	mvi	c,getver
+	call	bdos
+	shld	version
+; if version = cp/m 3 then
+	mov	a,l
+	cpi	31h
+	jnz	s2
+	mvi	e,255	; i'll handle errors
+	mvi	c,45	; set the mode
+	call	bdos
+; endif
+;
+; collect the input commands
+;
+s2	equ	$
 	startp	front,list,count
 ;
 ; get the default drive number
@@ -115,9 +130,7 @@ l123	inx	h
 ; db 5 ; FNC
 	mvi	a,0
 	sta	index
-	mvi	c,getver
-	call	bdos
-	shld	version
+	lhld	version
 	mov	a,h
 	ani	2
 	jz	nocpnt
@@ -156,6 +169,9 @@ stloop	mov	c,a	; copy drive nr
 	mov	a,l
 	cpi	31h
 	jz	nextl
+;
+; if cp/m 2, then use this call
+;
 	seldriv
 ; if hl = 0 then no drive there
 	mov	a,h	; get H to a
@@ -293,6 +309,8 @@ scanlp	equ	$
 	lda	index	
 	mov	m,a
 	seldisk
+	inr	a
+	jz	done	; ran out  of drives
 	call	dorest
 	call	nxtdriv
 ;
