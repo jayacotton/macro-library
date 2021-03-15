@@ -1,0 +1,36 @@
+;
+; test the connection to the fram chip on the MT011 board.
+;
+#include "../../spisel.mac"
+#include "../../spiwrt.mac"
+#include "../../spirde.mac"
+#include "../../pre.mac"
+#include "../../post.mac"
+#include "../../wto.mac"
+#include "../../cpmcommon.mac"
+#include "../../startp.mac"
+#include "../../getopt.mac"
+
+	org	100h
+	cpmcommon
+	pre
+	startp	front,list,count
+startlp	getopt	count,list,'R:W'
+	cpi	'R'
+	jz	FRAMrd
+	cpi	'W'
+	jz	FRAMwr
+	cpi	0
+	jz	usage
+	jmp	startlp
+usage	wto	'-r[address][count] -w[address][byte]'
+	jmp	exit
+; read
+FRAMrd	equ	$	; hl -> address ascii string
+	jmp	exit
+; write
+FRAMwt	equ	$	; hl -> address ascii string
+	jmp	exit
+exit	equ	$
+	post
+	end
