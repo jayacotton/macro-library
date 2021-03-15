@@ -1,0 +1,39 @@
+;
+; SPI SEL is intended for use on the MT011-ENET board.
+; The base addrss is 5ch.
+;
+;  This code selects the active device (up to three on this board).
+;
+
+	macro	spisel
+%lab	spisel	%port
+	gblb	%spisel
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%port' eq '')&noport
+	mvi	e,%port
+&noport	anop
+	call	spisel
+	aif	(%spisel)&done
+%spisel	setb	1
+	jmp	x$sysin	; jump over inline code
+;
+; do the select logic here for the spi port.
+;  spi port is the CS for one of the spi devices
+;  on the spi bus.
+;
+;		spi port select decode table
+d$sysin	db	0,1,8,10h,20h
+spisel	equ	$
+	mvi	d,0	; e is set to 0-4
+	lxi	h,d$sysin
+	dad	d	; add de to table address
+	mov	a,m	; load port decode
+; 5e is the select control port address
+	out	5eh	; send it out
+	ret
+x$sysin	equ	$
+&done	anop
+	mend
+
