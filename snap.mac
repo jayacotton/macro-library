@@ -1,3 +1,8 @@
+;
+; print a snap shot of memory
+; hl=address
+; b = size
+
 	macro	snap
 %lab	snap	%addr,%len
 	gblb	%snap

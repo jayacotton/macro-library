@@ -45,11 +45,10 @@
 	cpi	0
 	jz	a$sysin
 	lda	%cnt
-;	inr	a	; count seems to be off by one
 	sta	c$sysin	; save a copy of the count
 	lxi	h,%lst
 	shld	l$sysin	; save pointer to list of pointers
-	xra	a
+	xra	a	; zero marks our pasage
 	sta	f$sysin	; mark our passage.
 ;
 ;  each call to getopt will process the next arg in the start
@@ -70,36 +69,44 @@ a$sysin	lda	c$sysin	; get the count
 		; hl is a pointer to a list of pointers
 	lhld	l$sysin
 ;
-	rlc		; count *2 
+; index is 2,4,6,8,a,c
+	rlc		; (count *2)
+	sbi	2
+; de becomes the offset into list
 	mov	e,a
 	mvi	d,0
 	dad	d	; list[count]
-	mov	e,m	; hl = list[count]
+	mov	e,m	; de = (char *list[count])->string
 	inx	h
 	mov	d,m
-	xchg
+	xchg		; hl is now the pointer to system
+			; command buffer
 ;
 	mov	a,m	; should be a '-'
 	cpi	'.'	; a . is special case
 	jz	y$sysin
 	cpi	'-'
-	jnz	m$sysin ; error (force syntax)
+	jnz	m$sysin ; error (enforce syntax)
 p$sysin	inx	h	; now at the flag byte
-	mov	a,m
+	mov	a,m	; a = byte (i.e.  -x)  so X
 	inx	h	; now at the flag options
 ;
 ; now search the command options list for a match
 ;
 	push	h	; save our options pointer
 ;do a strchar search
+; this verifies that the command flag we send if via
+; the system buffer matches a list item that the 
+; program is expecting to see.
 	lxi	h,o$sysin
-z$sysin	mov	b,a
-	xra	a
-	cmp	m
-	jz	n$sysin
-	mov	a,b
+	mov	b,a	; copy a
+z$sysin	equ	$
+	xra	a	; clear a
+	cmp	m	; check for EOS
+	jz	n$sysin	; found EOS
+	mov	a,b	; get the byte back
 	cmp	m	; test a byte
-	jz	h$sysin
+	jz	h$sysin	; found a match
 ; that was not a match
 	inx	h	; up to next byte
 	jmp	z$sysin
@@ -111,21 +118,27 @@ z$sysin	mov	b,a
 y$sysin	push	h	; balance stack
 h$sysin	equ	$
 ; count the command we just found
-	lxi	h,c$sysin
+	lxi	h,c$sysin ; this is the command count 
 	dcr	m
 ; and the pointer to the rest of the arg
-	pop	h
+	pop	h	; hl -> command argument
+			; a = argument flag
 	jmp	x$sysin
 ;
 ; The arg flag must have a '-' in front of
 ; it.  And following that must be 1 character in length.
 ; The option data is next in line. 
 ;
+; we scaned the entire list of options and did not 
+; find a match.
 n$sysin	lda	c$sysin	; need to count the miss 
 	dcr	a
 	sta	c$sysin
+; this signals a miss
 	mvi	a,0	; flag not found
 	jmp	x$sysin
+; this signals end of list error
+; also, when count is zero, we go here.
 m$sysin	mvi	a,-1	; error, or end of list
 	jmp	x$sysin	
 ; local storage
