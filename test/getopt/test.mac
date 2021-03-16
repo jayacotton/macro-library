@@ -34,37 +34,47 @@
 #include "../../strchar.mac"
 #include "../../getopt.mac"
 
+DEBUG	equ	1
+NEVER	equ	0
+
 	common
 	org	100h
 	pre
 	; collect the command line startup text
+	if	DEBUG
+	else
 	startp	front,list,count
+	endif
 ; make a ddt compatable program
-;	jmp	next
-;bcount	db	4-1
-;count	db	4-1
-;list	dw	a
-;	dw	b
-;	dw	c
-;	dw	d
-;
-;a	db	'-Lxyzzy',0
-;b	db	'-Ntest',0
-;c	db	'-Efred',0
-;d	db	'-Q',0
-;next	equ	$
-	
+	if	DEBUG	
+	jmp	next
+xcount	db	4
+xlist	dw	a
+	dw	b
+	dw	c
+	dw	d
+
+a	db	'-Lxyzzy',0
+b	db	'-Ntest',0
+c	db	'-Efred',0
+d	db	'-Q',0
+
+list	equ	xlist
+count	db	4
+next	equ	$
+
 ;
 ; print out the command line flags
 ;
-	lda	bcount
+	lda	xcount
 	ora	a
 	jz	done
 
-	lda	count
-	sta	lcount
-ploop	lda	lcount	
-	lxi	h,list
+;	lxi	h,xlist
+;	shld	list
+	if	NEVER
+ploop	lda	xcount	
+	lxi	h,xlist
 	rlc
 	mov	e,a
 	mvi	d,0
@@ -75,10 +85,12 @@ ploop	lda	lcount
 	xchg
 	call	puts
 	crlf
-	lda	lcount
+	lda	xcount
 	dcr	a
-	sta	lcount
+	sta	xcount
 	jp	ploop	; sign goes neg.
+	endif
+	endif
 
 	; parse the text for flags
 	; warning, CP/M only passes upper case.
