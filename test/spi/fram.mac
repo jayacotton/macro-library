@@ -5,32 +5,105 @@
 #include "../../spiwrt.mac"
 #include "../../spirde.mac"
 #include "../../pre.mac"
+#include "../../prestack.mac"
 #include "../../post.mac"
 #include "../../wto.mac"
 #include "../../cpmcommon.mac"
 #include "../../startp.mac"
 #include "../../getopt.mac"
+#include "../../multip.mac"
+#include "../../hextohl.mac"
+#include "../../snap.mac"
+
+DEBUG	equ	0
 
 	org	100h
-	cpmcommon
+	common
 	pre
 	startp	front,list,count
-startlp	getopt	count,list,'R:W'
+startlp	getopt	count,list,'R:W:I:C:B:'
 	cpi	'R'
-	jz	FRAMrd
+	cz	FRAMrd
+	cpi	'C'
+	cz	Count
+	cpi	'B'
+	cz	Byte
 	cpi	'W'
-	jz	FRAMwr
+	cz	FRAMwr
+	cpi	'I'
+	cz	FRAMInit
 	cpi	0
 	jz	usage
+	cpi	-1
+	jz	process
 	jmp	startlp
-usage	wto	'-r[address][count] -w[address][byte]'
+usage	wto	'-r[address] -c[count] -w[address] -b[byte]'
+	wto	' address: 3456 or abcd no 0x no h'
+	wto	' count: in hex no 0x no h'
+	wto	' byte: in hex no 0x no h'
 	jmp	exit
 ; read
 FRAMrd	equ	$	; hl -> address ascii string
-	jmp	exit
+			; the string is null terminated
+	hextohl
+	shld	addr
+	mvi	a,1
+	sta	RFlag
+	mvi	a,'R'
+	ret
+; count
+Count	equ	$
+	hextohl
+	shld	size	
+	mvi	a,'C'
+	ret
+; byte
+Byte	equ	$
+	hextohl
+	mov	a,l
+	sta	byte
+	mvi	a,'B'
+	ret
 ; write
-FRAMwt	equ	$	; hl -> address ascii string
+FRAMwr	equ	$	; hl -> address ascii string
+			; next paramter is at list[n+1]
+	mvi	a,1
+	sta	WFlag
+	ret
+; init fram with a known pattern
+FRAMInit equ	$
+	mvi	a,'W'
+	ret
+;
+; do something
+;
+process	equ	$
+	lda	RFlag
+	cpi	1
+	jnz	Wloop
+; read some bytes and print them
+; read size bytes from the FRAM and store
+; them locally.  Then snap them out.
+;
+	lhld	size
+	mov	b,l
+	lxi	h,Local
+	snap
 	jmp	exit
+; Write some bytes
+;
+Wloop	lda	WFlag
+	cpi	1
+	jnz	exit
+;
 exit	equ	$
 	post
+	prestack
+	mul
+addr	dw	0
+size	dw	0
+byte	db	0
+RFlag	db	0
+WFlag	db	0
+Local	ds	8192
 	end
