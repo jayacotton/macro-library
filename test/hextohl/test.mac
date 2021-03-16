@@ -1,0 +1,25 @@
+; test the hextohl macro
+;
+#include "../../hextohl.mac"
+#include "../../multip.mac"
+#include "../../pre.mac"
+#include "../../prestack.mac"
+#include "../../post.mac"
+#include "../../wto.mac"
+#include "../../cpmcommon.mac"
+#include "../../startp.mac"
+#include "../../getopt.mac"
+#include "../../snap.mac"
+
+	org	100h
+	common
+	pre
+	hextohl	buffer
+	shld	addr
+	snap	addr,2
+	post
+	prestack
+	mul
+buffer	db	'1','2','3','4',0
+addr	dw	0
+	end
