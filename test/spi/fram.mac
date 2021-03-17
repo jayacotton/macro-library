@@ -4,6 +4,7 @@
 #include "../../spisel.mac"
 #include "../../spiwrt.mac"
 #include "../../spirde.mac"
+#include "../../spidef.mac"
 #include "../../pre.mac"
 #include "../../prestack.mac"
 #include "../../post.mac"
@@ -14,18 +15,22 @@
 #include "../../multip.mac"
 #include "../../hextohl.mac"
 #include "../../snap.mac"
+#include "../../dreg.mac"
 
 DEBUG	equ	0
 
 	org	100h
 	common
+	spidef
 	pre
 	startp	front,list,count
-startlp	getopt	count,list,'R:W:I:C:B:'
+startlp	getopt	count,list,'R:W:I:C:B:S'
 	cpi	'R'
 	cz	FRAMrd
 	cpi	'C'
 	cz	Count
+	cpi	'S'
+	cz	Status
 	cpi	'B'
 	cz	Byte
 	cpi	'W'
@@ -74,21 +79,59 @@ FRAMwr	equ	$	; hl -> address ascii string
 FRAMInit equ	$
 	mvi	a,'W'
 	ret
+; read the status register
+Status	equ	$
+	mvi	a,1
+	sta	SFlag
+	mvi	a,'S'
+	ret
 ;
 ; do something
 ;
 process	equ	$
+	lda	SFlag
+	cpi	1
+	jz	Sloop
 	lda	RFlag
 	cpi	1
 	jnz	Wloop
 ; read some bytes and print them
 ; read size bytes from the FRAM and store
+; select FRAM
+	spisel	FRAM
+; issue read command
+	spiwrt	FRMREAD
+; issue read address
+	spiwrt	0
+	spiwrt	0
+	lxi	h,Local
+; read all 8k of ram
+	lxi	b,8192
+; read a byte
+RDloop	spirde
+	mov	m,a
+	inx	h
+	dcx	b
+; check for done
+	mov	a,b
+	ora	c
+	jnz	RDloop
 ; them locally.  Then snap them out.
 ;
 	lhld	size
 	mov	b,l
 	lxi	h,Local
 	snap
+	jmp	exit
+; status processing
+Sloop	equ	$
+	spisel	FRAM
+	spiwrt	FRMRDSR
+	spirde	
+; reg a has the status byte
+	dreg
+	spisel	PARK
+	wto	'Reg A has the status byte'	
 	jmp	exit
 ; Write some bytes
 ;
@@ -105,5 +148,6 @@ size	dw	0
 byte	db	0
 RFlag	db	0
 WFlag	db	0
+SFlag	db	0
 Local	ds	8192
 	end
