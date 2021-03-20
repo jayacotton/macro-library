@@ -8,7 +8,7 @@
 %spidef	setb	1
 ;
 ; ports
-FRAM	equ	2	; Select FRAM device
+FRAM	equ	4	; Select FRAM device
 ; FRAM opcode commands
 FRMWREN	equ	6	; Set write enable latch
 FRMWDRI	equ	4	; Write disable
@@ -17,11 +17,11 @@ FRMWRSR	equ	1	; Write Status Register
 FRMREAD	equ	3	; Read memory data
 FRMWRT	equ	2	; Write memory data
 ;
-SD	equ	1	; select the sd card
+SD	equ	3	; select the sd card
 ;
-ENET	equ	0	; select the ethernet port
+ENET	equ	2	; select the ethernet port
 ;
-PARK	equ	3	; Put the bus in a safe mode
+PARK	equ	0	; Put the bus in a safe mode
 ;
 &done	anop
 	mend

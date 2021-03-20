@@ -19,7 +19,9 @@
 %spirde	setb	1
 	jmp	x$sysin
 ;
-spirde	in	5dh
+spirde	mvi	a,0ffh
+	out	5ch
+	in	5ch
 	ret
 x$sysin	equ	$
 &done	anop
