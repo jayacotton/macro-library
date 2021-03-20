@@ -181,7 +181,13 @@ stloop	mov	c,a	; copy drive nr
 ; not 16, then keep going.
 ;
 	jz 	next	; are there any ones
-nextl	lxi	h,drivlst ; drive list string pointer
+;
+; in cp/m 3 we skip the drive check above.
+; cp/m 3 has a better way to handle this.
+;
+nextl	equ	$ 
+	;snap	drivlst,16
+	lxi	h,drivlst ; drive list string pointer
 	lda	index	; get the index
 	mov	e,a	; and create a pointer to the string
 	mvi	d,0
@@ -197,7 +203,9 @@ next	lda	index
 ; return the system to the default drive, i.e. the
 ; active one when we started the find command.
 ;
-gohere	lda	default
+gohere	equ	$
+	;snap	drivlst,16
+	lda	default
 	seldisk
 
 ; make a dummy file name string.
