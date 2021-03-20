@@ -1,9 +1,15 @@
-FILE = fram
+all:	fram.hex seltest.hex
 
-$(FILE).hex: $(FILE).mac
-	macro $(FILE)
-	asm8080 $(FILE).asm -l
-	unix2dos $(FILE).asm
+fram.hex: fram.mac
+	macro fram
+	asm8080 fram.asm -l
+	unix2dos fram.asm
+
+seltest.hex: seltest.mac
+	macro seltest
+	asm8080 seltest.asm -l
+	unix2dos seltest.asm
 
 clean:
-	rm $(FILE).hex $(FILE).asm $(FILE).list $(FILE).lst $(FILE).bin
+	rm seltest.hex seltest.asm seltest.list seltest.lst seltest.bin
+	rm fram.hex fram.asm fram.list fram.lst fram.bin

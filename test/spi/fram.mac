@@ -24,7 +24,11 @@ DEBUG	equ	0
 	spidef
 	pre
 	startp	front,list,count
-startlp	getopt	count,list,'R:W:I:C:B:S'
+startlp	getopt	count,list,'R:W:I:C:B:S:C:H'
+	cpi	'H'
+	jz	Hello
+	cpi	'C'
+	cz	check
 	cpi	'R'
 	cz	FRAMrd
 	cpi	'C'
@@ -51,7 +55,7 @@ usage	wto	'-r[address] -c[count] -w[address] -b[byte]'
 FRAMrd	equ	$	; hl -> address ascii string
 			; the string is null terminated
 	hextohl
-	shld	addr
+	shld	addr 
 	mvi	a,1
 	sta	RFlag
 	mvi	a,'R'
@@ -77,6 +81,8 @@ FRAMwr	equ	$	; hl -> address ascii string
 	ret
 ; init fram with a known pattern
 FRAMInit equ	$
+	mvi	a,1
+	sta	IFlag
 	mvi	a,'W'
 	ret
 ; read the status register
@@ -89,16 +95,20 @@ Status	equ	$
 ; do something
 ;
 process	equ	$
+	lda	IFlag
+	cpi	1
+	cz	Iloop
 	lda	SFlag
 	cpi	1
-	jz	Sloop
+	cz	Sloop
 	lda	RFlag
 	cpi	1
-	jnz	Wloop
+	cz	rloop
+	jmp	Wloop
 ; read some bytes and print them
 ; read size bytes from the FRAM and store
 ; select FRAM
-	spisel	FRAM
+rloop	spisel	FRAM
 ; issue read command
 	spiwrt	FRMREAD
 ; issue read address
@@ -107,7 +117,9 @@ process	equ	$
 	lxi	h,Local
 ; read all 8k of ram
 	lxi	b,8192
-; read a byte
+; read a byte, it will supply bytes until you stop
+; or it runs out.  max address 2000h.
+;
 RDloop	spirde
 	mov	m,a
 	inx	h
@@ -116,22 +128,40 @@ RDloop	spirde
 	mov	a,b
 	ora	c
 	jnz	RDloop
-; them locally.  Then snap them out.
+	spisel	PARK
+;  Then snap them out.
 ;
 	lhld	size
 	mov	b,l
 	lxi	h,Local
 	snap
+	ret
 	jmp	exit
 ; status processing
-Sloop	equ	$
+SError	mvi	c,128
+	spisel	PARK	
 	spisel	FRAM
 	spiwrt	FRMRDSR
+	spirde
+	cpi	0ffh
+	jnz	Sloop
+	dcr	c
+	jnz	SError
+	jmp	exit
+Sloop	equ	$
+	spisel	FRAM
+;	spiwrt	FRMWREN
+	spiwrt	FRMRDSR
 	spirde	
+	cpi	0ffh
+	jz	SError
+	push	psw	
+	spisel	PARK
+	pop	psw
 ; reg a has the status byte
 	dreg
-	spisel	PARK
 	wto	'Reg A has the status byte'	
+	ret
 	jmp	exit
 ; Write some bytes
 ;
@@ -139,6 +169,72 @@ Wloop	lda	WFlag
 	cpi	1
 	jnz	exit
 ;
+; write the local buffer to the FRAM chip
+;
+	; select the FRAM
+Wrt	spisel	FRAM
+	; turn on write enable
+	spiwrt	FRMWREN
+	spisel	PARK
+	spisel	FRAM	
+	; command a write
+	spiwrt	FRMWRT
+	; at address 00
+	spiwrt	0
+	spiwrt	0
+	lxi	h,Local
+	lxi	b,8192
+Wl1	mov	a,m
+	; write a byte
+	spiwrt
+	inx	h
+	dcx	b
+	mov	a,c
+	ora	b
+	jnz	Wl1
+	; turn off write enable
+	spisel	PARK
+	spisel	FRAM	
+	spiwrt	FRMWDRI
+	; deselect FRAM
+	spisel	PARK
+	jmp	exit
+;
+check	lhld	size
+	mov	b,l
+	lxi	h,Local
+	snap
+	ret
+;
+Hello	call	Iloop
+	lxi	h,msg
+	lxi	d,Local
+Hloop	mov	a,m
+	stax	d
+	cpi	0
+	jz	Wrt
+	inx	h
+	inx	d
+	jmp	Hloop
+msg	db	'Hello World From FRAM',0
+; Init memory with a pattern
+Iloop	equ	$
+	lxi	h,Local
+	lxi	b,8192
+Il1	mvi	m,55h
+	inx	h
+	dcx	b
+	mvi	m,0aah
+	inx	h
+	dcx	b
+	mov	a,c
+	ora	b
+	jnz	Il1
+	lhld	size
+	mov	b,l
+	lxi	h,Local
+	snap
+	ret
 exit	equ	$
 	post
 	prestack
@@ -149,5 +245,6 @@ byte	db	0
 RFlag	db	0
 WFlag	db	0
 SFlag	db	0
+IFlag	db	0
 Local	ds	8192
 	end

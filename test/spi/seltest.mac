@@ -1,0 +1,67 @@
+; test the connection to the fram chip on the MT011 board.
+;
+#include "../../spisel.mac"
+#include "../../spiwrt.mac"
+#include "../../spirde.mac"
+#include "../../spidef.mac"
+#include "../../pre.mac"
+#include "../../prestack.mac"
+#include "../../post.mac"
+#include "../../wto.mac"
+#include "../../cpmcommon.mac"
+#include "../../startp.mac"
+#include "../../getopt.mac"
+#include "../../multip.mac"
+#include "../../hextohl.mac"
+#include "../../snap.mac"
+#include "../../dreg.mac"
+
+DEBUG	equ	0
+
+	org	100h
+	common
+	spidef
+	pre
+	lxi	h,0
+	shld	maxcount
+loop	wto	'select park'
+	mvi	c,-1
+l0	spisel	0
+	spisel	4
+	dcr	c
+	jnz	l0
+	wto	'select FRAM'
+	mvi	c,-1
+l1	spisel	1
+	spisel	0
+	dcr	c
+	jnz	l1
+	wto	'select ENET'
+	mvi	c,-1
+l2	spisel	2
+	spisel	0
+	dcr	c
+	jnz	l2
+	wto	'select SD'
+	mvi	c,-1
+l3	spisel	3
+	spisel	0
+	dcr	c
+	jnz	l3
+	wto	'select alt park'
+	mvi	c,-1
+l4	spisel	4
+	spisel	0
+	dcr	c
+	jnz	l4
+	lhld	maxcount
+	inx	h
+	shld	maxcount
+	mov	a,l
+	ora	h
+	jz	exit
+	jmp	loop
+exit	post
+	prestack
+maxcount dw	0
+	end
