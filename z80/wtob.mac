@@ -1,0 +1,16 @@
+	macro	wtob
+	wto	%line
+	gblb	%wtob
+	lxi	d,%line
+&gen	anop
+	call	Wtob
+	aif	(%wtob)&done
+%wtob	setb	1
+	jmp	x$sysin
+Wtob	equ	$
+	mvi	c,printf
+	call	bdos	
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

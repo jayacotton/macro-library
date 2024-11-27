@@ -1,0 +1,49 @@
+;
+; common defines for cpm
+;
+	macro	common
+	common
+bdos    equ     5h      ; dos entry point
+bios    equ     5h      ; dos entry point
+reset   equ     0       ; jump here to reset
+consi   equ     1       ; read console
+conso   equ     2       ; type function
+getcos	equ	11	; get console status
+getver	equ	12	; get cp/m version
+seldisk equ     14      ; select disk
+openf   equ     15      ; file open
+closef  equ     16      ; close file
+srchf   equ     17      ; get first directory entry
+srchn   equ     18      ; search next directory entry
+delf    equ     19      ; delete file
+readf   equ     20      ; read sequencial
+writef  equ     21      ; write sequencial
+creatf  equ     22      ; creat file
+renf    equ     23      ; rename file
+getdriv	equ	24	; get a list of log-in drives....
+getcur	equ	25	; get the current driver number
+setdma	equ	26	; set disk i/o buffer address
+readran equ     33      ; read random record
+writran equ     34      ; write random record
+cfs	equ	35      ; compute file size
+cfgtbl	equ	69	; return the config table
+;
+fcb	equ	5ch	; location of file control block
+buff	equ	80h	; location of disk input buffer
+DEFAULT	equ	buff
+;
+cr	equ	0dh
+lf	equ	0ah
+typef	equ	conso
+printf	equ	9	
+;
+; file control block stuff
+;
+fcbdn	equ	fcb+0	; disk name
+fcbfn	equ	fcb+1	; file name
+fcbft	equ	fcb+9	; file type
+fcbrl	equ	fcb+12	; current reel number
+fcbrc	equ	fcb+15	; current record number mod 128
+fcbcr	equ	fcb+32	; next record number
+fcbln	equ	fcb+33	; fcb length
+	mend

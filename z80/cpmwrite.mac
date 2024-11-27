@@ -1,0 +1,22 @@
+	macro	write
+%lab	write	
+	gblb	%wri
+	aif	(%wri)&done
+	call	v$sysin
+	jmp	y$sysin
+; hl points to a buffer
+; b is the count of caracters
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+v$sysin	equ	$
+	mov	a,m
+	call	putc
+	dcr	b
+	rz		; exit when b is zero
+	inx	h	; next byte
+	jmp	v$sysin	
+&done	anop
+%wri	setb	1
+y$sysin	equ	$
+	mend	

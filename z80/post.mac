@@ -1,0 +1,12 @@
+;
+; common post process
+;
+	macro	post
+%lab	post
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	lhld	oldsp
+	sphl
+	ret
+	mend

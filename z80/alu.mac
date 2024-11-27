@@ -1,0 +1,103 @@
+	macro	alu
+%lib	alu	
+	gblb	%alug
+	aif	('%lib' eq '')&skip
+%lib	equ	$
+&skip	anop
+;
+; de =  request
+; sp[-3] = left arg.
+; sp[-2] = right arg.
+;
+	xchg
+	shld	req
+	pop	hl
+	xchg		; return addr in de
+	pop	hl
+	shld	right
+	pop	hl
+	shld	left
+	xchg
+	push	hl	; rerun addr back on stack
+	call	XALU	
+	jmp	o$sysin
+	aif	(%alug)&done
+%alug	setb	1
+left	dw	0
+right	dw	0
+req	dw	0
+ALU_ADD	equ	0 * 3
+ALU_SUB equ	1 * 3
+ALU_MUL equ	2 * 3
+ALU_DIV equ	3 * 3
+ALU_MOD	equ	4 * 3
+ALU_LT	equ	5 * 3
+ALU_GT	equ	6 * 3
+ALU_LE	equ	7 * 3
+ALU_GE	equ	8 * 3
+ALU_EQ	equ	9 * 3
+ALU_NE	equ	10 * 3
+ALU_AND	equ	11 * 3
+ALU_OR	equ	12 * 3
+ALU_XOR	equ	13 * 3
+; 
+; process an alu process request
+;
+j$sysin	jmp	Xadd
+	jmp	Xsub
+	jmp	Xmul
+	jmp	Xdiv
+	jmp	Xmod
+	jmp	Xlt
+	jmp	Xgt
+	jmp	Xle
+	jmp	Xge
+	jmp	Xeq
+	jmp	Xne
+	jmp	Xand
+	jmp	Xor
+	jmp	Xxor	
+Xadd	equ	$
+	lhld	left
+	xchg
+	lhld	right
+	dad 	d
+	ret
+Xsub	equ	$
+	ret
+Xmul	equ	$
+	ret
+Xdiv	equ	$
+	ret
+Xmod	equ	$
+	ret
+Xlt	equ	$
+	ret
+Xgt	equ	$
+	ret
+Xle	equ	$
+	ret
+Xge	equ	$
+	ret
+Xeq	equ	$
+	ret
+Xne	equ	$
+	ret
+Xand	equ	$
+	ret
+Xor	equ	$
+	ret
+Xxor	equ	$
+	ret
+;
+; hl = left (alu op) right
+;
+XALU	equ	$
+	lhld	req
+	lxi	d,j$sysin
+	dad	d
+	pchl		; jump to support routine
+
+&done	anop
+o$sysin	equ	$
+	mend

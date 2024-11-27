@@ -1,0 +1,28 @@
+;
+; SPIRDE is intended for the MT011-enet board
+;
+; port 5c+1 is the read address of the board.
+;
+;  a write to the port sends data via the spi bus to the
+; selected device (see SPISEL).
+;
+; the macro will read a byte into the a register 
+;
+	macro	spirde
+%lab	spirde
+	gblb	%spirde
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	call	spirde	; write a byte
+	aif	(%spirde)&done
+%spirde	setb	1
+	jmp	x$sysin
+;
+spirde	mvi	a,0ffh
+	out	5ch
+	in	5ch
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

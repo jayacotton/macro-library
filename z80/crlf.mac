@@ -1,0 +1,20 @@
+	macro	crlf
+%lab	crlf
+	gblb	%crlf
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	call	newl	
+	aif	(%crlf)&done
+%crlf	setb	1
+	jmp	o$sysin
+newl	mvi	c,conso
+	mvi	e,cr
+	call	bdos
+	mvi	c,conso
+	mvi	e,lf
+	call	bdos
+	ret
+o$sysin	equ	$
+&done	anop	
+	mend

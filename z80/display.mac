@@ -1,0 +1,42 @@
+	macro	display
+%lab	display	%rec,%mode
+;
+; display a disk record on the console.
+;
+; mode is  'A'scii 'H'ex
+;
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	mvi	c,'A'	; preload mode
+	aif	('%rec' eq '')&norec
+	lxi	h,%rec
+&norec	anop
+	aif	('%mode' eq '')&nomode
+	mvi	c,%mode
+&nomode	anop
+	mvi	b,128
+	mov	a,c
+	cpi	'H'
+	jz	h$sysin
+;
+; display in ascii
+;
+l$sysin	mov	a,m
+	mov	e,a
+	mvi	c,conso
+	push	h
+	push	b
+	call	bdos
+	pop	b
+	pop	h
+	inx	h
+	dcr	b
+	jz	x$sysin
+	jmp	l$sysin	
+h$sysin	equ	$
+;
+; display in hex
+;
+x$sysin	equ	$
+	mend

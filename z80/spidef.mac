@@ -1,0 +1,27 @@
+;
+; common definitions for the spi bus board
+; MT011
+	macro	spidef
+	spidef	
+	gblb	%spidef
+	aif	(%spidef)&done
+%spidef	setb	1
+;
+; ports
+FRAM	equ	4	; Select FRAM device
+; FRAM opcode commands
+FRMWREN	equ	6	; Set write enable latch
+FRMWDRI	equ	4	; Write disable
+FRMRDSR	equ	5	; Read Status Register
+FRMWRSR	equ	1	; Write Status Register
+FRMREAD	equ	3	; Read memory data
+FRMWRT	equ	2	; Write memory data
+;
+SD	equ	3	; select the sd card
+;
+ENET	equ	2	; select the ethernet port
+;
+PARK	equ	0	; Put the bus in a safe mode
+;
+&done	anop
+	mend

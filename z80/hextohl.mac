@@ -1,0 +1,60 @@
+;
+; convert a null terminated hex ascii string pointed to by HL into
+; a 16 bit value and return it in HL
+;
+;  will require the multip macro
+;
+	macro	hextohl
+%lab	hextohl	%buffer
+	gblb	%hextohl
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%buffer' eq '')&nobuf
+	lxi	h,%buffer
+&nobuf	anop
+	call	hextohl
+	aif	(%hextohl)&done
+%hextohl setb	1 
+	jmp	x$sysin
+;
+hextohl	equ	$
+	shld	b$sysin	; save input buffer addr
+	lxi	h,0	; clear the accumulator
+	shld	r$sysin
+; shift the accumulator left 4 bits
+;  in fact we should multiply accumulator by
+; 16
+l$sysin	lhld	r$sysin
+	lxi	d,16
+	call	usmul
+	shld	r$sysin
+; convert byte to hex nib
+	lhld	b$sysin
+	mov	a,m	; get a byte
+	sbi	'0'	; convert to binary
+	cpi	10	; was it a-f ?
+	jc	h$sysin
+	sbi	1
+h$sysin	equ	$
+; merge with accumulator
+	lxi	h,r$sysin
+	ora	m
+	mov	m,a
+; test for EOS
+	lhld	b$sysin
+	inx	h
+	mov	a,m	; get a byte
+	cpi	0	; is this EOS
+	jz	e$sysin	; must be
+; loop till EOS
+	shld	b$sysin
+	jmp	l$sysin
+e$sysin	lhld	r$sysin
+	ret
+b$sysin	dw	0
+r$sysin	dw	0
+x$sysin	equ	$
+&done	anop
+	mend
+

@@ -1,0 +1,39 @@
+	macro	mod
+%lab	mod	%divsor,%divid,%res
+	gblb	%mod
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%divsor' eq '')&noparm
+	lhld	%divid
+	xchg
+	lhld	%divsor
+&noparm	anop
+	call	usmod	; unsigned mod (de%hl) res in hl
+	aif	(%mod)&done
+%mod	setb	1
+	jmp	x$sysin
+usmod	mov	a,h
+	ora	l
+	rz
+	push	d
+	push	h
+	call	usdiv
+	pop	d
+	call	usmul
+	mov	a,h
+	cma
+	mov	h,a
+	mov	a,l
+	cma
+	mov	l,a
+	inx	h
+	pop	d
+	dad	d
+	aif	('%res' eq '')&nores
+	shld	%res
+&nores	anop
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

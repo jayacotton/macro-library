@@ -1,0 +1,31 @@
+;
+; hl -> null terminated string
+; when done a = num of bytes, upto 255
+;
+	macro	strlen
+%lab	strlen
+	gblb	%strl
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop	
+	call	StrLen
+	aif	(%strl)&done
+	jmp	s$sysin
+;
+; count characters 
+;
+StrLen	push	b
+	mvi	b,0	; b get zero	
+	mvi	a,0	; a gets test byte
+l$sysin	cmp	m	; if m is zero 
+	jz	d$sysin ; out
+	inr	b	; count a character
+	inx	h	; move the pointer
+	jmp	l$sysin ; loop
+d$sysin	mov	a,b	; copy count to a
+	pop	b
+	ret
+%strl	setb	1
+s$sysin	equ	$
+&done	anop
+	mend

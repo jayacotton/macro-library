@@ -1,0 +1,43 @@
+;
+; directly call the BIOS to select
+; a drive REG C and return HL with 
+; a bitmap, or NULL.
+;   If NULL the drive is not present.
+;
+;  NOTE:  you can not intersperse this call
+;  with drive select calls,  it brakes CP/M
+;
+	macro	seldriv
+%lab	seldriv	
+	gblb	%seldriv
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; first extract the BIOS address from the
+; jmp address at location 0
+;
+	lda	1	; get low half of address	
+	mov	l,a	; into l
+	lda	2	; and high half of address
+	mov	h,a	; into h
+	mov	a,l
+	ani	0f0h	; strip off low nibble
+	adi	3*9	; add the magic bias
+	mov	l,a	; hl is now address for seldskf in CP/M
+	shld	b$sysin	; store BIOS address
+; now doit
+	aif	(%seldriv)&done
+%seldriv setb	1
+	call	seldriv
+	jmp	x$sysin
+seldriv equ	$
+	lhld	b$sysin	; pointer to function
+	mvi	e,0
+	push	h
+	ret		; tricky stuff here
+	ret
+b$sysin	dw	0
+x$sysin	equ	$
+&done	anop
+	mend

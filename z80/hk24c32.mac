@@ -1,0 +1,72 @@
+	macro	hk24c32
+	hk24c32	%name
+	gblb	%ram
+	aif	(%ram)&done
+%ram	setb	1
+;
+; hk24c32 driver macro.
+;  you will need the i2c driver macro to make this work.
+;  this will read/write the 4kx8 ram chip.
+;  the chip can do all kinds of i/o tricks. but
+;  for simplicity, we will just read/write the entire
+;  4k of ram.
+;
+	aif	('%name' neq '')&goodnm
+	mnote	"you need to name the driver"
+	mexit
+&goodnm	anop
+;
+;  hl = address of i/o buffer
+;  c = function: 0 = read 1 = write 
+;
+ram_i2c	equ	0a0h	; i2c device address.
+%name	equ	$
+	push	b
+	call	i2c_init
+	mvi	c,ram_i2c
+	call	i2c_send	; send i2c device addr
+	call	ram_adr		; send start address of ram
+	pop	b
+	mov	a,c
+	cpi	0
+	jnz	ram_wrt
+ram_rd	equ	$
+	call	ram_adr
+	lxi	b,4096
+l$sysin	push	b
+	call	i2c_recv
+	mov	a,c
+	mov	m,a
+	inx	h
+	pop	b
+	dcx	b
+	mov	a,b
+	add	c
+	jnz	l$sysin
+	ret
+ram_wrt	equ	$
+	call	ram_adr
+	lxi	b,4096
+m$sysin	push	b
+	mov	a,m
+	mov	c,a
+	inx	h
+	call	i2c_send
+	pop	b
+	dcx	b
+	mov	a,b
+	add	c
+	jnz	m$sysin
+	ret
+;
+; write the ram address to the chip.
+; used by read and write
+;
+ram_adr	equ	$
+	mvi	c,0
+	call	i2c_send
+	mvi	c,0
+	call	i2c_send	
+	ret
+&done	anop
+	mend

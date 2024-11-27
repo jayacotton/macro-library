@@ -1,0 +1,30 @@
+;
+; subtract hl from de, leave answer in hl
+;
+;  hl = a - b
+;
+	macro	subt
+%lib	subt	%a,%b
+	gblb	%sub
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%a' eq '')&noreg
+	lhld	%b
+	xchg
+	lhld	%a
+&noreg	anop
+	call	sub
+	aif	(%sub)&done
+%sub	setb	1
+	jmp	x$sysin
+sub	mov	a,e
+	sub	l
+	mov	l,a
+	mov	a,d
+	sbb	h
+	mov	h,a
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

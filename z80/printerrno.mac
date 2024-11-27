@@ -1,0 +1,34 @@
+	macro	printerrno	
+%lab	printerrno
+	gblb	%printerrno
+	aif	(%printerrno)&done
+%printerrno	setb	1
+	aif	('%lab' ne '')&haslab
+	mnote	'Must supply a label for this function'
+	mexit
+&haslab anop
+%lab	equ	$
+	lda	errno
+	rrc
+	rrc
+	rrc
+	rrc
+	ani	0fh
+	call 	h$sysin
+	lda	errno
+	ani	0fh
+	call	h$sysin	
+	jmp	x$sysin
+h$sysin	equ	$
+	cpi	10
+	jnc	p$sysin
+	adi	'0'
+	jmp	i$sysin
+p$sysin	adi	'A'-10
+i$sysin	mov	e,a
+	mvi	c,2
+	call	bdos
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

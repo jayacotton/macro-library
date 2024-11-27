@@ -1,0 +1,7 @@
+;
+;
+	macro	getcurent
+	getcurent
+	mvi	c,getcur
+	call	bdos
+	mend

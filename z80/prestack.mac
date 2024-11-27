@@ -1,0 +1,6 @@
+	macro	prestack
+	prestack
+oldsp   dw      0
+        ds      128
+newsp   equ     $
+	mend

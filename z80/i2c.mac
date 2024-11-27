@@ -1,0 +1,268 @@
+	macro	i2c
+	i2c	%base
+	gblb	%i2c
+	aif	(%i2c)&done
+%i2c	setb	1
+;
+; i2c driver module for the PCF8584 i2c chip.
+;
+; this verions (.1) by Jay Cotton
+;
+; i2c_init	init device	
+; i2c_read	read a byte
+; i2c_write	write a byte
+;
+; note: the device is setup to be a bus master.
+;  this can be turned around with minor additional codeing.
+; 
+	aif	('%base' eq '')&next 
+i2c_base	equ	%base
+	ago 	&over
+&next	anop
+i2c_base	equ	0d8h	; base address of board.
+&over	anop
+i2c_s0	equ	i2c_base	; data register
+i2c_s1	equ	i2c_base+1	; control register.
+i2c_stat equ	i2c_s1
+i2c_control equ	i2c_s1
+i2c_data equ	i2c_s0
+
+; bits in register s1
+; write only command bits
+
+pin_w	equ	10000000b	; pending interrupt not
+eso	equ	01000000b	; enable serial output
+es1	equ	00100000b
+es2	equ	00010000b
+eni	equ	00001000b	; enable external int output
+sta	equ	00000100b	; start/stop condition bits
+sto	equ	00000010b
+ack	equ	00000001b	; enable ack mode
+
+; read only status bits
+
+pin_r	equ	10000000b
+sts	equ	00100000b	; stop detected (slabe mode)	
+ber	equ	00010000b	; bus error bit
+ad0	equ	00001000b	; address zero or
+lrb	equ	00001000b	; last bit received
+aas	equ	00000100b	; address as slave 
+lab	equ	00000010b	; lost arbitration bit
+bbnot	equ	00000001b	; bus busy 
+
+i2c_init	equ	$
+; flow chart page 15
+; reset minimum 30 clock cycles 
+;  chip resets to slave receiver mode
+;  
+	mvi	a,80h
+	out	i2c_control	; 80h to s1
+	mvi	a,55h	
+	out	i2c_data	; 55h to s0 (sets loc addr to aah)
+	mvi	a,0a0h
+	out	i2c_control	; a0h to s1 next to s2
+	mvi	a,18h		; sys clk is 7mhz scl ~ 90khz
+	out	i2c_data
+	mvi	a,0c1h		; enable serial, set bus idel
+	out	i2c_control
+	ret
+;
+; turn the bus around from master write
+; to master read
+;
+;  d has slave address byte
+;
+i2c_swap	equ	$
+	mvi	a,45h
+	out	i2c_control
+	mov	a,d
+	rlc
+	ori	1
+	out	i2c_data
+	ret
+
+i2c_read	equ	$
+	in	i2c_data	; dummy read see 9.2
+;
+;  read byte is master receiver mode
+;   flow chart page 17
+;
+;   e has byte count to read
+;   d has slave address byte
+;  hl has output pointer
+;
+	inr	e		; off by 1 bug
+	mov	a,d
+	rlc
+	ani	11111110b
+	ori	00000001b	; for read bit 0 is a 1
+	out	i2c_data	; send slave address
+; spin to wait for bus to clear
+b$sysin	in	i2c_stat
+	ani	bbnot
+	; bus busy
+	jz	b$sysin 
+	mvi	a,0c5h
+	out	i2c_control	; generate start
+c$sysin	equ	$
+	in	i2c_stat
+	ani	pin_r
+	jnz	c$sysin		; loop
+	; check for ack or nack
+	; nack is error
+	in	i2c_stat
+	ani	lrb
+	jnz	e$sysin		; error condition
+	in	i2c_data	; dump the first byte
+g$sysin	equ	$
+	in	i2c_stat
+	ani	pin_r
+	jnz	g$sysin		; loop
+	; check for ack or nack
+	; nack is error
+	in	i2c_stat
+	ani	lrb
+	jnz	e$sysin		; error condition
+	; read the data byte and store in memory
+	in	i2c_data	; read byte
+	mov	m,a		 ; store
+	inx	h
+	dcr	e		; count
+	jnz	g$sysin		; zero is done
+; done receiveing bytes
+	mvi	a,40h
+	out	i2c_control	; send an ack
+	in	i2c_data	; this sets nack to slave 
+f$sysin	in	i2c_stat
+	ani	pin_r
+	jnz	f$sysin
+; send stop
+;  or
+; error condition
+;
+e$sysin	equ	$
+	mvi	a,0c3h		; send a stop
+	out	i2c_control
+	; read final byte from i2c bus 
+	in	i2c_data
+	mov	m,a
+	ret
+;
+; generate a NACK on the i2c bus
+;
+i2c_nack equ	$
+	mvi	a,40h
+	out	i2c_control
+	in	i2c_data
+	mvi	b,100	; check 100 times max
+n$sysin	dcr	b
+	jz	x1$sysin	; its stuck 
+	in	i2c_stat
+	ani	pin_r
+	jnz	n$sysin
+m$sysin	mvi	a,0c3h
+	out	i2c_control
+	in	i2c_data
+	ret
+;
+; return the busy status of the i2c bus 
+;
+i2c_busy	equ	$
+	in	i2c_stat
+	ani	bbnot
+	ret
+;
+; return the status value of the controller
+;
+i2c_status	equ	$
+	in	i2c_stat
+	ret
+;
+; delay for a bit of time
+i2c_delay	equ	$
+        push    psw
+        mvi     a,7
+l$sysin dcr     a
+        jnz     l$sysin
+        nop
+        nop
+        pop     psw
+	ret
+;
+i2c_write	equ	$
+	mvi	b,100	; only check 100 times
+w$sysin	dcr	b
+	jz	x$sysin
+;
+; write  bytes in master transmitter mode.
+;   flow chart page 16
+;
+;  e has the byte count to send.
+;  d has the slave address byte.
+;  hl has a pointer to the data to send.
+;
+	in	i2c_stat	; get status byte
+	ani	bbnot		; test for busy bit
+	jz	w$sysin		; spin here for a 0
+	inr	e		; fix off by one error
+	mov	a,d
+	rlc			; for write bit 0 to 0
+	ani	11111110b	;
+	out	i2c_data	; send slave addr
+	mvi	a,0c5h		; generate a start
+	out	i2c_control
+	mvi	b,100
+a$sysin	equ	$		; data xmit loop
+	dcr	b
+	jz	y$sysin
+	in	i2c_stat	; get status
+	mov	c,a
+	ani	pin_r
+	jnz	a$sysin
+	mov	a,c
+	ani	lrb
+	jnz	d$sysin
+;
+; send a byte and count it
+;
+	mov	a,m
+	out	i2c_data
+	inx	h		; up to next byte
+	dcr	e		; count the byte
+	jz	d$sysin
+	mvi	b,100
+	jmp	a$sysin
+; 
+; done with transmission
+;
+d$sysin	equ	$
+	mvi	a,0c3h
+	out	i2c_control	; generate a stop
+	ret
+x$sysin	equ	$
+	lxi	d,e1$sysin
+	call	z$sysin
+	ret
+x1$sysin equ	$
+	lxi	d,e3$sysin
+	call	z$sysin
+y$sysin	equ	$
+	lxi	d,e2$sysin
+	call	z$sysin
+	ret
+z$sysin	mvi	c,printf
+	call	bdos
+;
+; attempt to clear the error condition
+;
+        mvi     a,0c3h          ; send a stop
+        out     i2c_control
+        ; read final byte from i2c bus
+        in      i2c_data
+	jmp	reboot
+	ret
+e1$sysin db	'Write Error: I2C bus busy',cr,lf,'$'
+e2$sysin db	'Write Error: Data transmission did not finish',cr,lf,'$' 
+e3$sysin db	'Nack Error: Data transmission did not finish',cr,lf,'$' 
+&done	anop	
+	mend

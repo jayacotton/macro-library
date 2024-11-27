@@ -1,0 +1,128 @@
+	macro	dreg
+%lab	dreg
+	gblb	%dreg
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; Display CPU Registers
+;
+	push	psw
+	push	h
+	push	d
+	push	b
+	shld	hl	; save hl
+	lxi	h,0
+	dad	sp
+	shld 	spx	; save a copy of stack pointer
+	push	d
+	pop	h
+	shld	de	; save a copy of d register
+	push	b
+	pop	h
+	shld	bc	; save a copy of b register
+	push	psw
+	pop	h
+	shld	pswx	; save a copy of a register
+	call	Dreg	; display the registers
+	pop	b
+	pop	d
+	pop	h
+	pop	psw
+;
+; end of inserted text
+;
+	aif	(%dreg)&done
+;
+%dreg	setb	1
+;
+	jmp	k$sysin
+;
+; local storage for register storage
+;
+hl	dw	0
+de	dw	0
+bc	dw	0
+spx	dw	0
+pswx	dw	0
+;
+; display code here
+;
+Dreg	lhld	pswx
+	lxi	d,pmesr	; unpack psw
+	call	n$sysin
+	lhld	spx	; and stack
+	lxi	d,smesr
+	call	n$sysin
+	lhld	hl	; and hl set
+	lxi	d,hmesr
+	call	n$sysin
+	lhld	de	; and de set
+	lxi	d,dmesr
+	call	n$sysin
+	lhld	bc	; and bc set
+	lxi	d,bmesr
+	call	n$sysin
+;
+; macro stacking.....
+;
+	lxi	d,pmes
+	mvi	c,printf 
+	call	bdos	
+	ret
+pmes	db	'psw   = '
+pmesr	db	'xx xx'
+	dw	0d0ah
+plen	equ	$-pmes
+smes	db	'stack = '
+smesr	db	'xx xx'
+	dw	0d0ah
+slen	equ	$-smes
+hmes	db	'hl    = '
+hmesr	db	'xx xx'
+	dw	0d0ah
+hlen	equ	$-hmes
+dmes	db	'de    = '
+dmesr	db	'xx xx'
+	dw	0d0ah
+dlen	equ	$-dmes
+bmes	db	'bc    = '
+bmesr	db	'xx xx'
+	dw	0d0ah
+	db	'$'
+blen	equ	$-bmes
+allen	equ	$-pmes
+;
+; write 2 8-bit numbers
+;
+n$sysin	mov	a,h	; write high byte
+	call	h$sysin
+	inx	d		; put a space between 
+	mov	a,l		; now lower byte
+	call	h$sysin
+	ret
+;
+; encode an 8 bit value into hex
+;
+h$sysin	push	psw
+	rrc			; iolate the top nib
+	rrc
+	rrc
+	rrc
+	call	i$sysin	; convert to hex 
+	pop	psw 		; now the bottom nib
+i$sysin	push	psw
+	ani	0fh		; just the lower 4 bits
+	cpi	0ah		; is this less than 10
+	jnc	j$sysin
+	adi	'0'		; yep, make a number
+	jmp	l$sysin
+j$sysin	adi	'a'-10	; make a letter
+l$sysin	stax	d	; save the byte
+	inx	d		; up to next address
+	pop	psw
+	ret
+k$sysin	equ	$
+&done	anop
+	mend
+

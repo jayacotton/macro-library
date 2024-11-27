@@ -1,0 +1,131 @@
+	macro	startp
+	startp	%lab,%argv,%argc
+	gblb	%startp
+	aif	(%startp)&done
+%startp	setb	1
+;
+; pickup the start up parameters from cpm 
+; and parse them into a list
+;
+;  there will be %argv and %argc 
+;
+;   %argv = list of pointers to args
+;   %argc = number of pointers in list.
+;   argb = the raw list of text.
+;
+;  at 80h is the number of bytes that will be found in the 
+;  command buffer.
+;  at 82h in cpm is the text following the current command
+;  being executed.
+;  Each word in the buffer is seperated by a NULL character.
+;
+;  arbitrary assumptions.
+;   there will be no more than 16 arguments given.
+;   the total length of the command will be not more than
+;   128 bytes.
+;
+bcount	equ	80h
+cmdbuf	equ	82h
+
+	aif	('%lab' ne '')&goodl
+	mnote	"needs a function name"
+	mexit
+&goodl	anop
+	aif	('%argv' ne '')&goodv
+	mnote	"needs an argvector"
+	mexit
+&goodv	anop
+	aif	('%argc' ne '')&goodc
+	mnote	"needs vector count"
+	mexit
+&goodc	anop
+%lab	equ	$
+;
+;  copy the startup text from cpm to my private buffer.
+;
+	lxi	h,cmdbuf
+	shld	ibuf
+	lxi	h,argb
+	shld	lbuf
+	lda	bcount
+	sta	cnt
+	cpi	0
+	jz	x$sysin
+	xra	a
+	sta	%argc
+;  do{
+;    %argv[%argc] = lbuf
+a$sysin	equ	$
+	lda	%argc	; get current count
+	lxi	d,0	; clear de
+	mov	e,a	; set low byte
+	push	d	; 
+	pop	h	;
+	dad	d	; hl = %argc*2
+	lxi	d,%argv
+	dad	d	; hl = %argv+%argc*2
+; now store the current lbuf pointer in 
+	xchg		; de -> list[count]
+	lhld	lbuf	; hl -> local text buffer
+	xchg
+	mov	m,e	; m = low half of pointer
+	inx	h
+	mov	m,d	; m = high half of pointer
+;    while(*ibuf){
+c$sysin	lhld	ibuf	; back to text pointer
+	mov	a,m	; start scan
+	cpi	' '	; space is the separator
+	jz	b$sysin	; was a space
+;      *lbuf++=*ibuff++;
+	xchg
+	lhld	lbuf	; local text buffer
+	mov	m,a	; copy byte
+	inx	h	; advance pointers
+	inx	d
+	shld	lbuf	; save local text pointer
+	xchg
+	shld	ibuf	; save system text pointer
+;      charcnt--;
+	lda	cnt	; count the character 
+	dcr	a
+	sta	cnt	; we just processed
+	cpi	0	; are we out of text ?
+	jz	y$sysin
+;    }
+	jmp	c$sysin	; loop
+;    *lbuf++=*ibuff++;
+b$sysin	mvi	a,0	; convert space to null
+	inx	h	; advance to next char position
+	shld	ibuf	; save input buffer pointer
+	lhld	lbuf	; get local buffer pointer
+	mov	m,a	; null terminate the string
+	inx	h	; up to next position
+	shld	lbuf
+;    %argc++;
+	lxi	h,%argc	; count this argument
+	inr	m
+;    while(charcnt)}
+;
+; checking for =< 0 
+	lda	cnt
+	cpi	0
+	jnz	a$sysin
+;	ani	80h
+;	jnz	a$sysin
+;
+	jmp	x$sysin
+;
+; these are ment to be public paramaters
+;
+lbuf	dw	0
+ibuf	dw	0
+cnt	db	0
+%argv	ds	32	; list of pointers to arguments
+%argc	db	0	; number of arguments given.
+argb	ds	128	; this is the copy of the data.
+y$sysin	equ	$	; count the last argument
+	lxi	h,%argc
+	inr	m
+x$sysin	equ	$
+&done	anop
+	mend 

@@ -1,0 +1,6 @@
+	macro	gdate
+	gdate	%buf,%mode
+	lxi	h,%buf
+	mvi	c,%mode
+	call	gdate
+	mend

@@ -1,0 +1,27 @@
+	macro	putc
+%lab	putc	%char
+	gblb	%putc
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%char' eq '')&noreg
+	mvi	a,%char
+&noreg	anop
+	call	putc
+	aif	(%putc)&done
+%putc	setb	1
+	jmp	x$sysin
+putc	push	h
+	push	d
+	push	b
+	mov	e,a
+	mvi	c,conso
+	call	bdos
+	pop	b
+	pop	d
+	pop	h
+	ret
+x$sysin	equ	$
+&done	anop
+	mend	
+

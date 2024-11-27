@@ -1,0 +1,134 @@
+; packfd  is used to create file names for the
+; directory funcions in CP/M
+;
+;  n$sysin is the working buffer.
+;    set n$sysin to ' '
+;
+;   
+
+	macro	packfd
+%lib	packfd	%fcb,%string
+	gblb	%packfd
+	aif	('%lib' eq '')&nolib
+%lib	equ	$
+&nolib	anop
+;
+	lxi	h,e$sysin
+	lxi	d,%fcb
+	call	packfn	
+	jmp	c$sysin	
+e$sysin	db	%string
+	db	0
+c$sysin	equ	$
+	aif	(%packfd)&done
+%packfd	setb	1
+	jmp	g$sysin	; jump over the code
+packfn	equ	$
+	shld	s$sysin	; file name
+	xchg
+	shld	f$sysin	; fcb
+	mvi	b,33	; size of fcb
+	mvi	a,0
+	call	memset	; clear it out
+p$sysin	mvi	a,0
+	sta	o$sysin ;o$sysin=0;
+	lxi	h,n$sysin  ; working space
+	mvi	b,12
+	mvi	a,' '	; flood it with spaces
+	call	memset ;memset(n$sysin,' ',12);
+a$sysin	equ	$
+	lhld	s$sysin	; get file name
+	mov	a,m
+	cpi	0
+	jz	d$sysin	;while(*s$sysin){
+			;switch(*s$sysin){
+	cpi	'*' 	;case '*':
+	jnz	z$sysin
+	lda	o$sysin  ;if(o$sysin >=8){
+	cpi	8
+	jz	t$sysin	; =
+	jnc	t$sysin ; >
+; this is the else case
+;}else{
+; here o$sysin is less than 8
+l$sysin	equ	$
+	lda	o$sysin
+	cpi	8
+	jz	b$sysin	;while(o$sysin < 8)
+	lxi	h,n$sysin
+	mov	e,a
+	mvi	d,0
+	dad	d
+	inr	a	; o$sysin++
+	sta	o$sysin
+	mvi	m,'?' 	;n$sysin[o$sysin++]='?';
+	jmp	l$sysin
+t$sysin	equ	$
+; here o$sysin is more than 8
+	lda	o$sysin
+	cpi	11
+	jz	b$sysin ;while(o$sysin <11)
+	lxi	h,n$sysin
+	mov	e,a
+	inr	a
+	sta	o$sysin	; o$sysin ++
+	mvi	d,0
+	dad	d
+	mvi	m,'?' 	;n$sysin[o$sysin++]='?';
+	jmp	t$sysin
+;}
+z$sysin	equ	$
+	cpi	'.' 	;case '.':
+	jnz	y$sysin
+	mvi	a,8 	;o$sysin=8;
+	sta	o$sysin
+	jmp	b$sysin ;break;
+y$sysin	cpi	'?' 	;case '?':
+	jnz	x$sysin
+	lxi	h,n$sysin
+	lda	o$sysin
+	mov	e,a
+	mvi	d,0
+	dad	d
+	mvi	m,'?' 	;n$sysin[o$sysin++] = '?';
+	inr	a
+	sta	o$sysin
+	jmp	b$sysin ;break;
+;default:
+x$sysin	equ	$	; default case
+	lxi	h,n$sysin
+	lda	o$sysin
+	mov	e,a
+	mvi	d,0
+	dad	d
+	xchg
+	inr	a
+	sta	o$sysin
+	lhld	s$sysin
+	mov	a,m
+	stax	d 	;n$sysin[o$sysin++] = *s$sysin;
+	jmp	b$sysin ;break;
+;}
+b$sysin	equ	$	; break to here
+	lhld	s$sysin
+	inx	h
+	shld	s$sysin 	;s$sysin++;
+	jmp	a$sysin 
+;}	
+;}
+n$sysin	ds	13	; working space for name
+o$sysin	db	0	; index
+s$sysin	dw	0	; input s$sysin
+f$sysin	dw	0	; input f$sysin pointer
+; copy working space to fcb
+d$sysin	equ	$	
+	lhld	f$sysin
+	inx	h
+	lxi	d,n$sysin
+	mvi	b,12
+	mvi	c,0
+	call	strcpy
+	ret
+g$sysin	equ	$
+&done	anop
+	mend

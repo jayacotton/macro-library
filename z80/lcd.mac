@@ -1,0 +1,86 @@
+;
+;  macro for controlling and displaying on the lcd module.
+;
+	macro	lcd
+%lab	lcd	
+	gblc	%lcd
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+LCD_Base equ	0
+LCD_Command equ	0+LCD_Base
+LCD_Write equ	1+LCD_Base
+LCD_Clear equ	1
+LCD_Return_home equ 2
+	call	lhwinit
+	aif	(%lcd)&done
+%lcd	setb	1
+	jmp	x$sysin
+;
+lhwinit	call	lcd_init
+	call	lcd_clear
+	call	lcd_home
+	ret
+;
+lcd_w_busy equ	$
+l$sysin	in	LCD_Command
+	ani	080h
+	rz
+	jmp	l$sysin
+;
+lcd_init equ	$
+	mvi	a,30h
+	call	lcd_outp
+	call	lcd_w_abit
+	mvi	a,30h
+	call	lcd_outp
+	call	lcd_w_abit
+	mvi	a,30h
+	call	lcd_outp
+	call	lcd_w_abit
+	mvi	a,38h
+	call	lcd_outp
+	call	lcd_w_abit
+	mvi	a,10h
+	call	lcd_outp
+	call	lcd_w_abit
+	mvi	a,0ch
+	call	lcd_outp
+	call	lcd_w_abit
+	mvi	a,6h
+	call	lcd_outp
+	call	lcd_w_abit
+	ret
+;
+lcd_clear equ	$
+	mvi	a,LCD_Clear
+	call	lcd_outp
+	call	lcd_w_abit
+	ret
+;
+lcd_home equ	$
+	mvi	a,LCD_Return_home
+	call	lcd_outp
+	call	lcd_w_abit
+	ret
+;
+lcd_outp equ	$
+	out	LCD_Command
+	ret
+;
+lcd_w_abit equ	$
+	mvi	a,0ffh
+w$sysin	dcr	a
+	jnz	w$sysin
+	ret
+;
+lcd_write equ	$
+	push	psw
+	call	lcd_w_busy
+	pop	psw
+	out	LCD_Write
+	call	lcd_w_abit
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

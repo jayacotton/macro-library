@@ -1,0 +1,38 @@
+	macro	strchar
+%lab	strchar	%src,%cnt,%targ
+	gblb	%strchar
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; de is input
+; b max number of bytes
+; c is target byte
+; on return, de  points to the last inspected byte.
+; if that byte is not the targ value, then the search
+; failed
+;
+	aif	('%src' eq '')&nosrc
+	lxi	d,%src
+&nosrc	anop
+	aif	('%cnt' eq '')&nocnt
+	mvi	b,%cnt
+&nocnt	anop
+	aif	('%targ' eq '')&notarg
+	mvi	c,%targ
+&notarg	anop
+	call	strchar
+	aif	(%strchar)&done
+%strchar	setb	1
+	jmp	x$sysin
+strchar	equ	$
+s$sysin ldax	d	; get byte pointed to by de
+	cmp	c	; comp for targ byte
+	rz		; it was
+	inx	d	; bump the indexs
+	dcr	b	; count the byte
+	rz		; was that all
+	jmp	s$sysin
+x$sysin	equ	$
+&done	anop
+	mend

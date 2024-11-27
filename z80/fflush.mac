@@ -1,0 +1,37 @@
+; flush the fcb block.  i.e. write it
+; out to the disk.
+;
+; flush does not change the pointers so, repeated calls
+; are non destructive.  you can fflush and fputc 
+; 
+; hl = fcb
+
+	macro	fflush
+%lab	fflush	%fcb
+	gblb	%fflush
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%fcb' eq '')&nohl
+	lxi	h,%fcb
+&nohl	anop
+	call	fflush
+	aif	(%fflush)&done
+%fflush	setb	1
+	jmp	x$sysin
+fflush	equ	$	
+;
+; to all the work here
+;
+	xchg
+	mvi	c,21
+	call	bdos
+;
+; return to the default dma buffer
+;
+	ret
+f$sysin	dw	0	; fcb pointer
+x$sysin	equ	$
+&done	anop
+	mend	
+

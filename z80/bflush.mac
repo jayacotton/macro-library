@@ -1,0 +1,108 @@
+;
+; bflush empties the memory buffer out to the disk
+; file.  There are several steps needed to get the
+; data into the file from memory.
+;
+
+	macro	bflush
+%lab	gflush	%fcb,%bom,%eom
+	gblb	%bflush
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%fcb' eq '')&nohl
+	lxi	h,%fcb
+&nohl	anop
+	aif	('%bom' eq '')&node
+	lxi	d,%bom
+&node	anop
+	aif	('%eom' eq '')&nobc
+	lxi	b,%eom
+&nobc	anop
+	call	bflush
+	aif	(%bflush)&done
+%bflush	setb	1
+	jmp	x$sysin
+bflush	equ	$	
+; save the registers in local ram
+	shld	f$sysin	; file control block
+	xchg
+	shld	b$sysin	; beginning of ram address
+			; start of buffer
+	push	b	; get address of pointer to
+	pop	h	; end of buffer
+;
+; this implements HL = (HL) i.e. load HL with memory pointed
+; to my HL
+;  NOTE:  this only works in ram. 
+	shld	a$sysin
+	db	2ah	; this encodes an lhld addr
+a$sysin	dw	0	; instruction
+	shld	e$sysin	; end of data
+;
+; to all the work here
+; NOTE: the output file is created and open
+; and we are selected on the correct drive.
+;
+; for (pnt = BOM; pnt <= EOD; pnt+=128)
+;   
+	xchg
+	lhld	b$sysin
+; hl = start of data buffer
+; de = end of data buffer
+l$sysin	equ	$
+	call	u$sysin	; compair pointers
+	jc	c$sysin	; hl => de	
+; write directly from memory to the 
+; file.
+	lhld	b$sysin
+	xchg		; de = buffer address
+	mvi	c,26	; set dma buffer address
+	call	bdos
+	lhld	f$sysin
+	xchg		; de = fcb
+	mvi	c,21	; write sequential
+	call	bdos
+	mvi	c,21	; reload the command
+	inr	a	; check return code ff = error
+	cz	fmerr
+;
+; advance pointers
+;
+	lxi	d,128	; size of disk buffer
+	lhld	b$sysin	; count the disk buffer
+	dad	d	; add offset
+	shld	b$sysin	; store new buffer addr
+	lhld	e$sysin	; get end of buffer address
+	xchg		; de = end of data buffer
+	lhld	b$sysin	; hl = beginning of data buffer
+	jmp	l$sysin	; loop
+; compair hl and de
+u$sysin	xchg		; unsigned compair hl => de
+	mov	a,h	; check the top half first
+	cmp	d
+	rnz		; no point proceeding
+	mov	a,l	; now check the botton half
+	cmp	e
+	ret		; carry bit = condition
+; dump the last record
+c$sysin	equ	$
+        lhld    b$sysin
+        xchg            ; de = buffer address
+        mvi     c,26    ; set dma buffer address
+        call    bdos
+        lhld    f$sysin
+        xchg            ; de = fcb
+        mvi     c,21    ; write sequential
+        call    bdos
+        mvi     c,21    ; reload the command
+        inr     a       ; check return code ff = error
+        cz      fmerr
+	ret	
+b$sysin	dw	0	; buffer start address
+e$sysin	dw	0	; buffer end address
+f$sysin	dw	0	; file control block
+x$sysin	equ	$
+&done	anop
+	mend	
+

@@ -1,0 +1,19 @@
+;
+; check for console interrupt
+;
+	macro	cosint
+%lab	cosint	
+	gblb	%cosint
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	call	i$sysin
+	aif	(%cosint)&done
+%cosint	setb	1
+	jmp	o$sysin
+i$sysin	mvi	c,11
+	call	bdos
+	ret
+o$sysin	equ	$
+&done	anop
+	mend

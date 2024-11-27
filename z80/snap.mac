@@ -1,0 +1,119 @@
+;
+; print a snap shot of memory
+; hl=address
+; b = size
+
+	macro	snap
+%lab	snap	%addr,%len
+	gblb	%snap
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	push	h
+	push	d
+	push	b
+	aif	('%addr' eq '')&noreg
+	lxi	h,%addr
+	mvi	b,%len
+&noreg	anop
+	lxi	d,$
+	call	Snap 
+	pop	b
+	pop	d
+	pop	h
+	aif	(%snap)&done
+;
+%snap	setb	1
+;
+	jmp	e$sysin
+;
+; dump a snapshot of memory 
+;
+Snap	call	c$sysin
+	push	h
+	push	d
+	push	b
+	lxi	d,snapmsg
+	mvi	c,printf
+	call	bdos
+	pop	b
+	pop	d
+	pop	h
+	push	h
+	xchg
+	mov	a,h
+	call	h$sysin
+	mov	a,l
+	call	h$sysin
+	call	c$sysin
+	pop	h
+l$sysin	mov	a,h
+	call	h$sysin
+	mov	a,l
+	call	h$sysin
+	call	d$sysin
+	mvi	c,20
+j$sysin	mov 	a,m
+	inx	h
+	call	h$sysin
+	call	d$sysin
+	dcr	b
+	jz	c$sysin
+	dcr	c
+	jnz	j$sysin
+	call	c$sysin
+	jmp	l$sysin
+c$sysin	push	h
+	push	d
+	push	b	
+	mvi	e,0ah
+	mvi	c,typef
+	call	bdos	; write a character
+	mvi	e,0dh
+	mvi	c,typef
+	call	bdos	; write a character
+	pop	b
+	pop	d
+	pop	h
+	ret
+d$sysin	push	h
+	push	d
+	push	b	
+	mvi	e,20h
+	mvi	c,typef
+	call	bdos	; write a character
+	pop	b
+	pop	d
+	pop	h
+	ret
+h$sysin	push	psw
+	rrc
+	rrc
+	rrc
+	rrc
+	call	i$sysin
+	pop	psw
+	call	i$sysin
+	ret
+i$sysin	ani	0fh
+	cpi	0ah
+	jnc	z$sysin
+	adi	'0'
+	jmp	y$sysin
+z$sysin	adi	'a'-10
+y$sysin	call	f$sysin
+	ret
+f$sysin	push	h
+	push	d
+	push	b	
+	mov	e,a
+	mvi	c,typef
+	call	bdos	; write a character
+	pop	b
+	pop	d
+	pop	h
+	ret
+snapmsg	db	'Snapshot taken at: $'
+e$sysin	equ	$
+&done	anop		
+	mend

@@ -1,0 +1,61 @@
+;
+; compute and load a vector from %tab, reg a
+; is the index number 0 to n < 256
+;
+; return hl = new vector value
+;
+	macro	lvect
+%lab	lvect	%tab
+	gblb	%lvect
+	aif	('%tab' neq '')&tabok
+	mnote	"missing table address'
+	mexit
+&tabok	anop
+;	aif	('%reg' neq '')&regok
+;	mnote	"missing index register'
+;	mexit
+;&regok	anop
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; load vector into hl from %tab:((%reg:)*2)
+;
+;	aif	('%tab'(1,1) ne '(')&noreg
+;	mnote	"table name must be a label"
+;	mexit
+;&noreg	anop
+;	mov	a,%reg	; copy index to a
+	lxi	h,%tab	; get base address of table
+	call	l$sysin
+	aif	(%lvect)&done
+%lvect	setb	1
+;
+; common subroutine for loading a vector from a
+; table
+;
+	jmp	s$sysin
+l$sysin	equ	$
+	xchg		; save table address in de
+	lxi	h,0	; get a zero
+;
+; uses sp to calculate the new vector address
+;
+	dad	sp	; hl = old sp
+	xchg		; de = old sp hl = table addr
+	di		; no interrupts for now
+	sphl		; sp = table address
+	mvi	h,0	; more zeros
+	mov	l,a	; copy index
+	dad	h	; hl = index * 2
+	dad	sp	; hl = (index*2)+table
+	sphl		; sp = hl
+	pop	h	; hl = new vector
+	xchg		; de = new vector
+	sphl		; restore sp
+	ei
+	xchg		; hl = new vector
+	ret
+s$sysin	equ	$
+&done	anop
+	mend

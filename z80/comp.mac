@@ -1,0 +1,64 @@
+;
+;  these compair functions are lifted enmass from ccc.asm in bds
+;  runtime code.  By Leor Zolman.
+;
+; This macro is very touchy, be carefull when messing with it.
+;
+;  compair hl to de and set flags - see below.
+;
+;   hl < de  jnc
+;   hl > de  jnc
+;   hl = de  jz
+;
+	macro	comp
+%lab	comp	%sense
+	gblb	%com
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%sense' eq 'eq')&eq
+	aif	('%sense' eq 'lt')&lt
+	aif	('%sense' eq 'gt')&gt
+&eq	anop
+;  z if hl == de
+	call	useq
+	aif	(%com)&done
+	jmp	x$sysin
+	ago	&skip
+&lt	anop
+;  c if hl < de
+	call	uslt
+	aif	(%com)&done
+	jmp	x$sysin
+	ago	&skip
+&gt	anop
+;  c if hl > de
+	call	usgt
+	aif	(%com)&done
+	jmp	x$sysin
+&skip	anop
+	aif	(%com)&done
+%com	setb	1
+useq	mov	a,l
+	cmp	e
+	rnz
+	mov	a,h
+	cmp	d
+	ret	
+uslt	xchg
+	mov	a,d
+	cmp	h
+	rnz
+	mov	a,e
+	cmp	l
+	ret
+usgt	xchg
+	mov	a,h
+	cmp	d
+	rnz
+	mov	a,l
+	cmp	e
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

@@ -1,0 +1,211 @@
+	macro	rtc
+%lab	rtc	
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	ret
+rtc_port	equ	0c0h
+mask_data	equ	10000000b
+mask_clk	equ	01000000b
+mask_rd		equ	00100000b
+mask_rst	equ	00010000b
+get_time equ	$
+	call	rtc_reset_on
+	call	rtc_bit_delay
+	call	rtc_bit_delay
+	call	rtc_bit_delay
+	call	rtc_get_time
+; DE has addr of time string
+	lxi	d,rtc_print_buffer
+	ret
+rtc_get_time equ $
+	di
+	call	rtc_reset_off
+	mvi	c,010111111b
+	call	rtc_wr
+	call	rtc_rd
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	7
+	adi	'0'
+	sta	rtc_print_buffer+15
+	mov	a,c
+	ani	0fh
+	adi	'0'
+	sta	rtc_print_buffer+16
+	call	rtc_rd
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	7
+	adi	'0'
+	sta	rtc_print_buffer+12
+	mov	a,c
+	ani	0fh
+	adi 	'0'
+	sta	rtc_print_buffer+13
+	mvi	a,':'
+	sta	rtc_print_buffer+14
+	call	rtc_rd
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	3
+	adi	'0'
+	sta	rtc_print_buffer+9 
+	mov	a,c
+	ani	0fh
+	adi	'0'	
+	sta	rtc_print_buffer+10
+	mvi	a,':'
+	sta	rtc_print_buffer+11
+	call	rtc_rd
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	3
+	adi	'0'
+	sta	rtc_print_buffer+6
+	mov	a,c
+	ani	0fh
+	adi	'0'
+	sta	rtc_print_buffer+7
+	mvi	a,' '
+	sta	rtc_print_buffer+8
+	call	rtc_rd
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	3
+	adi	'0'
+	sta	rtc_print_buffer+3
+	mov	a,c
+	ani	0fh
+	adi 	'0'
+	sta	rtc_print_buffer+4
+	mvi	a,'-'
+	sta	rtc_print_buffer+5
+	call	rtc_rd
+	mvi	a,'-'
+	sta	rtc_print_buffer+17
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	0fh
+	adi	'0'
+	sta	rtc_print_buffer+18
+	mov	a,c
+	ani	0fh
+	adi	'0'
+	sta	rtc_print_buffer+19
+	call	rtc_rd
+	mov	a,c
+	rlc
+	rlc
+	rlc
+	rlc
+	ani	0fh
+	adi	'0'
+	sta	rtc_print_buffer
+	mov	a,c
+	ani	0fh
+	adi	'0'
+	sta	rtc_print_buffer+1
+	mvi	a,'-'
+	sta	rtc_print_buffer+2
+	call	rtc_reset_on
+	ei
+	ret	
+rtc_init equ	$
+	ret
+rtc_reset_on equ $
+	mvi	a,mask_data+mask_rd
+	out	rtc_port
+	call	rtc_bit_delay	
+	call	rtc_bit_delay	
+	ret
+rtc_bit_delay equ $
+	push	psw
+	mvi	a,7
+rtc_bit_delay1 equ $
+	dcr	a
+	jnz	rtc_bit_delay1
+	nop
+	nop
+	pop	psw
+	ret
+rtc_reset_off equ $
+	mvi	a,mask_data+mask_rd+mask_rst
+	out	rtc_port
+	call	rtc_bit_delay
+	call	rtc_bit_delay
+	ret
+rtc_wr	equ	$
+	xra	a
+rtc_wr1 push	psw
+	mov	a,c
+	ani	1
+	jz	rtc_wr2
+	mvi	a,mask_rst+mask_data
+	out	rtc_port
+	call	rtc_bit_delay
+	mvi	a,mask_rst+mask_clk+mask_data
+	out	rtc_port
+	jmp	rtc_wr3
+rtc_wr2	mvi	a,mask_rst
+	out	rtc_port
+	call	rtc_bit_delay
+	mvi	a,mask_rst+mask_clk
+	out	rtc_port
+rtc_wr3	call	rtc_bit_delay	
+	mov	a,c
+	rrc
+	mov	c,a
+	pop	psw
+	inr	a
+	cpi	8
+	jnz	rtc_wr1
+	ret
+rtc_rd	equ	$
+	xra	a
+	mvi	c,0
+	mvi	b,1
+rtc_rd1	push	psw
+	mvi	a,mask_rst+mask_rd
+	out	rtc_port
+	call	rtc_bit_delay
+	in	rtc_port
+	ani	1
+	jz	rtc_rd2
+	mov	a,c
+	add	b
+	mov	c,a
+rtc_rd2 mov	a,b
+	rlc
+	mov	b,a
+	mvi	a,mask_rst+mask_clk+mask_rd
+	out	rtc_port
+	call	rtc_bit_delay
+	pop	psw
+	inr	a
+	cpi	8
+	jnz	rtc_rd1
+	ret
+rtc_print_buffer equ $
+	ds	20
+	db	lf,cr,'$'
+	mend
+

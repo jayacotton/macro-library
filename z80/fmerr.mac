@@ -1,0 +1,96 @@
+	macro	fmerr
+	fmerr	
+	gblb	%fmerr
+	aif	(%fmerr)&done
+%fmerr	setb	1
+	jmp	x$sysin
+;
+; print out the error code value
+;
+fmerr	equ	$
+	mov	a,c
+	sta	m$sysin
+	lda	errno
+	rrc
+	rrc
+	rrc
+	rrc
+	ani	0fh
+	call 	h$sysin
+	lda	errno
+	ani	0fh
+	call	h$sysin	
+	lda	m$sysin
+; open err
+	cpi	openf
+	jz	opener
+;close err
+	cpi	closef
+	jz	closeer
+; search err
+	cpi	srchf
+	jz	opener
+; write err
+	cpi	writef
+	jz	noroer
+; create err
+	cpi	creatf
+	jz	noroer
+; delete err
+	cpi	delf
+	jz	deleter
+;
+; we don't know what the error code
+; is.
+;
+	lxi	d,o$sysin
+	mvi	c,printf
+	call	bdos
+	ret
+h$sysin	equ	$
+	cpi	10
+	jnc	p$sysin
+	adi	'0'
+	jmp	i$sysin
+p$sysin	adi	'A'-10
+i$sysin	mov	e,a
+	mvi	c,2
+	call	bdos
+	ret
+m$sysin	db	0
+o$sysin	db	' Unknown i/o error'
+	db	cr,lf
+	db	'$'
+opener	equ	$
+	lxi	d,c$sysin
+	mvi	c,printf
+	call	bdos
+	jmp	0
+c$sysin	db	' Open error, file not found'
+	db	cr,lf
+	db	'$'
+closeer equ	$
+	lxi	d,d$sysin
+	mvi	c,printf
+	call	bdos
+	ret
+d$sysin	db	' Close error, file not closed' 
+	db	cr,lf,'$'
+deleter equ	$
+	lxi	d,e$sysin
+	mvi	c,printf
+	call	bdos
+	jmp	0
+e$sysin	db	' Delete error, file not found'
+	db	cr,lf,'$'
+noroer	equ	$
+	lxi	d,r$sysin
+	mvi	c,printf
+	call	bdos
+	jmp	0
+r$sysin	db	' Disk error, no room'
+	db	cr,lf,'$'
+errno	db	0
+x$sysin	equ	$
+&done	anop
+	mend

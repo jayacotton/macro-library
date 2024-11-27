@@ -1,0 +1,93 @@
+;
+; z80 sio/2 chip support.
+;
+; on the rc2014 port 2 is available to use.  port 1 is the console io port.
+;
+	macro	sio2
+%lab	sio2	%read,%write
+	gblb	%sio
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	(%sio)&done
+%sio	setb	1
+SIOB_D	EQU	83h
+SIOB_C	EQU	82h
+;
+; init the port 
+;
+;  Our clock rate is 7.3728Mhz from the system clock.
+;  we need to get an 115200 bps bit rate from the sio chip.
+;  should not be a problem since the console runs at that 
+;  speed.  Will look into fast speeds later.
+;
+	mvi	a,1
+	out	SIOB_C
+	mvi	a,0
+	out	SIOB_C	; turn off interrupts
+	mvi	a,4
+	out	SIOB_C	; access write reg 4
+	mvi	a,11000100b
+	out	SIOB_C	; x64 clock 1 stop no parity
+	mvi	a,5
+	out	SIOB_C	; access write reg 5
+	mvi	a,11101000b	
+	out	SIOB_C	; 8 bit char enable transmit
+	mvi	a,3
+	out	SIOB_C	; access write reg 3
+	mvi	a,11000001b
+	out	SIOB_C	; 8 bits auto enables rx enab.
+	sub	a
+	out	SIOB_C	; access read reg 0
+	aif	('%lab' eq '')&skip
+	ret
+&skip	anop
+	aif	('%lab' ne '')&nojmp
+	jmp	x$sysin
+&nojmp	anop
+%write	equ	$
+	mvi	a,0
+	out	SIOB_C
+wr1	equ	$
+	in	SIOB_C
+	ani	4
+	jz	wr1
+	mov	a,e
+	out	SIOB_D
+	ret
+%read	equ	$
+	mvi	a,0
+	out	SIOB_C
+rd1	equ	$
+	in	SIOB_C
+	ani	1	
+	jz	rd1
+	in	SIOB_D
+	mov	e,a
+	ret
+pollwr	mvi	a,0
+	out	SIOB_C
+	in	SIOB_C
+	ani	4
+	ret
+pollrd	mvi	a,0
+	out	SIOB_C
+	in	SIOB_C
+	ani	1
+	ret
+rtson	equ	$
+	mvi	a,0
+	out	SIOB_C
+	mvi	a,11101010b	
+	out	SIOB_C
+	ret
+rtsoff	equ	$
+	mvi	a,0
+	out	SIOB_C
+	mvi	a,11101000b	
+	out	SIOB_C
+	ret
+x$sysin	equ	$
+	ret
+&done	anop	
+	mend

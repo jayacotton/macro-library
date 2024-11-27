@@ -1,0 +1,101 @@
+;
+; convert m to new radix n
+;
+;  hl = target number
+;  de = new radix
+;
+; on return hl points to a string of digits
+; de is the count of digits.
+;
+;  needs:
+;   mod, comp and div macros.
+;
+	macro	radix 
+%lab	radix	%m,%n
+	gblb	%radix
+	aif	('%lib' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%m' eq '')&noreg
+; load target number.
+	lhld	%m
+; into de
+	xchg
+; hl is the new radix
+	lhld	%n
+&noreg	anop
+	call	radix
+	aif	(%radix)&done
+%radix	setb	1
+	jmp	x$sysin
+	; store the initial input values
+radix	shld	m$sysin
+	xchg
+	shld	n$sysin
+	; 
+	; d = address of buffer
+	lxi	h,b$sysin
+	shld	p$sysin
+	; i = 0 
+	lxi	h,0	; this should be a byte.
+	shld	i$sysin
+	; while (m > = n) {
+l$sysin	lhld	n$sysin
+	xchg
+	lhld	m$sysin
+	; comp	lt
+	call	uslt
+	jc	c$sysin
+	;	d++ = mod m,n
+	lhld	m$sysin
+	xchg
+	lhld	n$sysin
+	;mod
+	call	usmod
+	xchg
+	lhld	p$sysin
+	mov	m,e
+	inx	h
+	shld	p$sysin	
+	;	m = m/n
+	lhld	m$sysin
+	xchg
+	lhld	n$sysin
+	;div
+	call	usdiv
+	shld	m$sysin
+	;       i++;
+	lhld	i$sysin
+	inx	h
+	shld	i$sysin
+	jmp	l$sysin
+	; }
+	; d++ = m 
+c$sysin	lhld	m$sysin
+	xchg
+	lhld	p$sysin
+	mov	m,e
+	shld	p$sysin
+	; i++;
+	lhld	i$sysin
+	inx	h
+	shld	i$sysin
+	xchg
+	lhld	p$sysin
+	ret	
+	;
+	; d points to a list of digits (binary encoded) in reverse order.
+	; in memory.  [lsd,sd.....,msd]..
+	; 
+	; to convert to ascii
+	;  buff[i--]=  (*d<0xa)?(*d+'0'):(*d+'A')
+	;	d--
+DEBUG	equ	$
+b$sysin	ds	17	; buffer to hold digits.  space for 16
+p$sysin	dw	b$sysin	; buffer pointer.
+m$sysin	dw	0	; working number
+n$sysin	dw	0	; working radix
+i$sysin	dw	0	; output counter
+x$sysin	equ	$
+&done	anop
+	mend	

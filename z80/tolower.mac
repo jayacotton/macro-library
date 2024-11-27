@@ -1,0 +1,25 @@
+	macro	tolower
+%lab	tolower
+	gblb	%tolow
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	call	ToLower
+	aif	(%tolow)&done
+	jmp	s$sysin
+;
+; convert reg a to lower case
+;
+ToLower	cpi	'Z'	; c <= 'Z'
+	jz	e$sysin
+	jc	e$sysin
+	ret
+e$sysin	cpi	'A'	; c >= 'A'
+	rc
+	rnz
+	adi	32
+	ret
+%tolow	setb	1
+s$sysin	equ	$
+&done	anop
+	mend

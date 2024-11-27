@@ -1,0 +1,38 @@
+	macro	printl
+%lab	printl	%buf,%cr
+	gblb	%printl
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%buf' eq '')&noreg
+	lxi	h,%buf
+&noreg	anop
+	call	printl
+	aif	(%printl)&done
+%printl	setb	1
+	jmp	x$sysin
+; hl points to a null terminated string, or provide a pointer
+printl	mov	a,m
+	cpi	0
+	jz	c$sysin
+	mov	e,a
+	mvi	c,conso
+	push	h
+	call	bdos
+	pop	h
+	inx	h
+	jmp	printl
+c$sysin	equ	$
+	aif	('%cr' eq '')&nocr
+	mvi	e,cr
+	mvi	c,conso
+	call	bdos
+	mvi	e,lf
+	mvi	c,conso
+	call	bdos
+&nocr	anop
+	ret
+x$sysin	equ	$
+&done	anop
+	mend	
+

@@ -1,0 +1,9 @@
+	MACRO	PUSHALL
+%LAB	PUSHALL
+	AIF	('%LAB' EQ '')&NOLAB
+%LAB	equ	$
+&NOLAB	ANOP
+	push	h
+	push	d
+	push	b
+	MEND

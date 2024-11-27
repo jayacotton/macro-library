@@ -1,0 +1,30 @@
+;
+; SPIWRT is intended for the MT011-enet board
+;
+; port 5c is the base address of the board.
+;
+;  a write to the port sends data via the spi bus to the
+; selected device (see SPISEL).
+;
+; the macro will write a byte from the a register, or 
+; the immediate byte specified.
+;
+	macro	spiwrt
+%lab	spiwrt	%byte
+	gblb	%spiwrt
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%byte' eq '')&nobyte
+	mvi	a,%byte
+&nobyte	anop
+	call	spiwrt	; write a byte
+	aif	(%spiwrt)&done
+%spiwrt	setb	1
+	jmp	x$sysin
+;
+spiwrt	out	5ch
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

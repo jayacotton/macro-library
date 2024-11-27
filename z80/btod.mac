@@ -1,0 +1,107 @@
+	macro	btobase10
+%lab	btobase10	%where
+	gblb	%btod
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	aif	('%where' eq '')&noreg
+	lhld	%where
+&noreg	anop
+	call	btod
+	aif	(%btod)&done
+%btod	setb	1
+	jmp	o$sysin	
+btod	equ	$
+	shld	a
+	lxi	h,n$sysin
+	mvi	a,20h
+	mvi	b,5
+	call	memset
+	lhld	a
+	xchg
+	lxi	h,10
+	shld	f	
+l$sysin	equ	$
+;   b = mod a 10
+	lhld	f
+	xchg
+	lhld	a
+	call	usmod	
+	shld	b
+;
+;   we need to get a dividend so, need another 
+;   divide.  mod get the remainder. 
+;
+;   c = a/10
+	lhld	a
+	xchg
+	lxi	h,10
+	call	usdiv
+	shld	c	
+;   d = b*10
+	lhld	b
+	mov	a,h
+	add	l
+	jz	m$sysin
+; skip the multiply if b is zero
+; rats, must mul.
+	lhld	b
+	xchg
+	lxi	d,10
+	call	usmul
+	shld	d
+;   e = a - d
+	lhld	d
+	xchg
+	lhld	a
+	call	sub
+	shld	e
+; make aa ascii digit
+	lhld	b
+z$sysin	mov	a,l
+	adi	'0'
+	lhld	d$sysin
+	mov	m,a
+	dcx	h
+	shld	d$sysin
+	lhld	c
+	shld	a
+; are we done yet ?
+	lxi	d,10
+	call	uslt
+	jc	f$sysin
+; not done yet
+	jmp	l$sysin
+m$sysin	lxi	h,0
+	shld	e
+	jmp	z$sysin
+; finished with convertion.
+f$sysin	equ	$
+	lhld	c
+	mov	a,l
+	adi	'0'
+	lhld	d$sysin
+	mov	m,a
+	ret
+; 
+; working variables
+;
+a	dw	0	; quotiant
+b	dw	0	; remainder
+c	dw	0	; diff
+d	dw	0
+e	dw	0
+f	dw	0
+;
+; text output buffer
+;
+n$sysin	dw	0
+	dw	0
+	dw	0	
+;
+; buffer pointer (runs backwards)
+;
+d$sysin	dw	n$sysin+4 	; point to end of buffer.
+o$sysin	equ	$
+&done	anop
+	mend

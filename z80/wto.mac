@@ -1,0 +1,33 @@
+;
+; Write To Operator
+;
+	macro	wto
+%lab	wto	%line
+	gblb	%wto
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+	push	h
+	push	d
+	push	b
+	jmp	a$sysin
+b$sysin	db	%line
+	db	cr,lf
+	db	'$'
+a$sysin	equ	$
+	lxi	d,b$sysin
+&gen	anop
+	call	Wto
+	pop	b
+	pop	d
+	pop	h
+	aif	(%wto)&done
+%wto	setb	1
+	jmp	x$sysin
+Wto	equ	$
+	mvi	c,printf
+	call	bdos	
+	ret
+x$sysin	equ	$
+&done	anop
+	mend

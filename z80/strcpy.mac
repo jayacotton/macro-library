@@ -1,0 +1,42 @@
+	macro	strcpy
+%lab	strcpy	%dest,%src,%cnt,%term
+	gblb	%strcpy
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; hl is output
+; de is input
+; b max number of bytes
+; c is terminal byte
+;
+	lxi	b,8000h
+	aif	('%dest' eq '')&nodest
+	lxi	h,%dest	
+&nodest	anop
+	aif	('%src' eq '')&nosrc
+	lxi	d,%src
+&nosrc	anop
+	aif	('%cnt' eq '')&nocnt
+	mvi	b,%cnt
+&nocnt	anop
+	aif	('%term' eq '')&noterm
+	mvi	c,%term
+&noterm	anop
+	call	strcpy
+	aif	(%strcpy)&done
+%strcpy	setb	1
+	jmp	x$sysin
+strcpy	equ	$
+s$sysin ldax	d	; get byte pointed to by de
+	cmp	c	; comp for terminal byte
+	rz		; it was
+	mov	m,a	; store the byte in mem
+	inx	d	; bump the indexs
+	inx	h
+	dcr	b	; count the byte
+	rz		; was that all
+	jmp	s$sysin
+x$sysin	equ	$
+&done	anop
+	mend

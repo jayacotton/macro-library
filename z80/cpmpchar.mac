@@ -1,0 +1,28 @@
+;
+; print a single character on the console
+; from the a register
+;
+	macro	pchar
+%lab	pchar
+	gblb	%pch
+	aif	(%pch)&done
+	call	x$sysin	
+	jmp	z$sysin
+	aif	('%lab' eq '')&nolab
+%lab	equ 	$
+&nolab	anop
+x$sysin	equ	$
+	push	b
+	push	d
+	push	h	; save the registers
+	mvi	c,typef
+	mov	e,a
+	call	bdos
+	pop	h
+	pop	d
+	pop	b
+	ret
+%pch	setb	1
+&done	anop
+z$sysin	equ	$
+	mend
