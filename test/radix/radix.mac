@@ -1,22 +1,22 @@
 ;
 ; test the radix converion macro
 ;
-#include "../../wto.mac"
-#include "../../pre.mac"
-#include "../../post.mac"
-#include "../../prestack.mac"
-#include "../../cpmcommon.mac"
-#include "../../crlf.mac"
-#include "../../radix.mac"
-#include "../../mod.mac"
-#include "../../comp.mac"
-#include "../../divide.mac"
-#include "../../multip.mac"
-#include "../../binascii.mac"
-#include "../../printl.mac"
-#include "../../memset.mac"
-#include "../../pushall.mac"
-#include "../../popall.mac"
+#include "wto.mac"
+#include "pre.mac"
+#include "post.mac"
+#include "prestack.mac"
+#include "cpmcommon.mac"
+#include "crlf.mac"
+#include "radix.mac"
+#include "mod.mac"
+#include "comp.mac"
+#include "divide.mac"
+#include "multip.mac"
+#include "binascii.mac"
+#include "printl.mac"
+#include "memset.mac"
+#include "pushall.mac"
+#include "popall.mac"
 
 	common
 	org	100h

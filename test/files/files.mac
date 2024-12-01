@@ -1,19 +1,19 @@
-#include "../../wto.mac"
-#include "../../pre.mac"
-#include "../../post.mac"
-#include "../../prestack.mac"
-#include "../../cpmcommon.mac"
-#include "../../fcb.mac"
-#include "../../fileopen.mac"
-#include "../../fread.mac"
-#include "../../fileclose.mac"
-#include "../../fmerr.mac"
-#include "../../packfd.mac"
-#include "../../memset.mac"
-#include "../../strcpy.mac"
-#include "../../setdma.mac"
-#include "../../printl.mac"
-#include "../../display.mac"
+#include "wto.mac"
+#include "pre.mac"
+#include "post.mac"
+#include "prestack.mac"
+#include "cpmcommon.mac"
+#include "fcb.mac"
+#include "fileopen.mac"
+#include "fread.mac"
+#include "fileclose.mac"
+#include "fmerr.mac"
+#include "packfd.mac"
+#include "memset.mac"
+#include "strcpy.mac"
+#include "setdma.mac"
+#include "printl.mac"
+#include "display.mac"
 
 	common
 	org	100h
@@ -22,8 +22,8 @@
 ;
 ; prep a file name to open
 ;
-	lxi	h,rdfcb
-	packfd	'A:TEST.TXT'
+;	lxi	h,rdfcb
+	packfd	rdfcb,'A:TEST.TXT'
 ;
 ; open the file
 ;

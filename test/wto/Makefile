@@ -1,7 +1,7 @@
 FILE = wto
 
 $(FILE).hex: $(FILE).mac
-	macro $(FILE)
+	macro -i $(FILE) -L ../../ -a 8080
 	asm8080 $(FILE).asm -l
 
 clean:

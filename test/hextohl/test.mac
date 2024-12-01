@@ -1,15 +1,15 @@
 ; test the hextohl macro
 ;
-#include "../../hextohl.mac"
-#include "../../multip.mac"
-#include "../../pre.mac"
-#include "../../prestack.mac"
-#include "../../post.mac"
-#include "../../wto.mac"
-#include "../../cpmcommon.mac"
-#include "../../startp.mac"
-#include "../../getopt.mac"
-#include "../../snap.mac"
+#include "hextohl.mac"
+#include "multip.mac"
+#include "pre.mac"
+#include "prestack.mac"
+#include "post.mac"
+#include "wto.mac"
+#include "cpmcommon.mac"
+#include "startp.mac"
+#include "getopt.mac"
+#include "snap.mac"
 
 	org	100h
 	common

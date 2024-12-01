@@ -1,16 +1,16 @@
-#include "../../wto.mac"
-#include "../../pre.mac"
-#include "../../post.mac"
-#include "../../prestack.mac"
-#include "../../cpmcommon.mac"
-#include "../../fcb.mac"
-#include "../../filedelete.mac"
-#include "../../fmerr.mac"
-#include "../../packfd.mac"
-#include "../../memset.mac"
-#include "../../startp.mac"
-#include "../../strcpy.mac"
-;#include "../../snap.mac"
+#include "wto.mac"
+#include "pre.mac"
+#include "post.mac"
+#include "prestack.mac"
+#include "cpmcommon.mac"
+#include "fcb.mac"
+#include "filedelete.mac"
+#include "fmerr.mac"
+#include "packfd.mac"
+#include "memset.mac"
+#include "startp.mac"
+#include "strcpy.mac"
+;#include "snap.mac"
 
 	common
 	org	100h
@@ -22,8 +22,7 @@
 ;
 ; prep a file name to open
 ;
-	lxi	h,rdfcb	; pack file name into fdfcb (dummy)
-	packfd	'XXXXXXXX.XXX'
+	packfd	rdfcb,'XXXXXXXX.XXX'
 	memset	filenm,0,16
 	strcpy	filenm,argb,16,0
 	lhld	list	; get pointer to intended target file

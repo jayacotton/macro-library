@@ -1,7 +1,7 @@
 FILE = files
 
 $(FILE).hex: $(FILE).mac
-	macro $(FILE)
+	macro -i $(FILE) -o $(FILE) -l $(FILE) -a 8080 -L ../../
 	asm8080 $(FILE).asm -l
 
 clean:

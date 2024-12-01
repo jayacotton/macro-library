@@ -1,7 +1,7 @@
 FILE = test
 
 $(FILE).hex: $(FILE).mac
-	macro $(FILE)
+	macro -i $(FILE) -o $(FILE) -l $(FILE) -L ../../ -a 8080
 	asm8080 $(FILE).asm -l
 	unix2dos $(FILE).asm
 

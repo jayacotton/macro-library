@@ -1,8 +1,8 @@
-#include "../../wto.mac"
-#include "../../pre.mac"
-#include "../../post.mac"
-#include "../../prestack.mac"
-#include "../../cpmcommon.mac"
+#include "wto.mac"
+#include "pre.mac"
+#include "post.mac"
+#include "prestack.mac"
+#include "cpmcommon.mac"
 
 	common
 	org	100h
