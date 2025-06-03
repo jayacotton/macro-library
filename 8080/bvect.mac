@@ -1,0 +1,39 @@
+; branch on a vector in a table useing a register as the
+; index.
+
+; %tab is the address of table  (16 bit address's in random order
+; Register A has the index value 8bit so 0 to 255 
+
+; branch to vector value from here.  Called routines must do a local
+; return to maintain stack balance.
+
+	macro	bvect
+%lab	bvect	%tab
+	gblb	%bvect
+	aif	('%tab' neq '')&tabok
+	mnote	"missing table address"
+	mexit
+&tabok	anop
+	aif	('%lab' eq '')&nolab
+%lab	equ	$
+&nolab	anop
+;
+; save registers here.  note we don't need to save 
+; HL or A
+;
+	push	b	; save BC
+	push	d	; save DE
+	mvi	d,0
+	mov	e,a	; make a table index
+	lxi	h,%tab	; get base of table
+	dad	d	; add index X 1
+	dad	d	; add index X 2
+	mov	e,m	; pull address from table
+	inx	h
+	mov	h,m
+	mov	l,e
+	pop 	d	; get DE and BC off the stack
+	pop	b
+	pchl		; go to function 
+	mend
+
